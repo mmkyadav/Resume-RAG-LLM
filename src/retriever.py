@@ -7,43 +7,48 @@ import chromadb
 
 # Import configuration and setup helpers
 from config import (
-    OPENROUTER_API_KEY,
+    GEMINI_API_KEY,
     CHROMA_DB_PATH,
     COLLECTION_NAME,
-    validate_config
 )
 from indexer import setup_llamaindex_settings
 from matcher import FuzzyNameMatcher
 from classifier import QueryClassifier
 
+
 class FilteredQueryEngine:
     """
     FilteredQueryEngine acts as an intelligent router and gatekeeper.
     It:
-    1. Classifies the query using LLM (or fallback) to block comparison queries.
+    1. Classifies the query using Gemini LLM (or fallback) to block comparison queries.
     2. Resolves candidate names using FuzzyNameMatcher to detect typos/shortforms.
     3. Blocks queries that target 0 or >1 candidates.
     4. Routes the query to LlamaIndex with a candidate-specific metadata filter.
+
+    api_key: optional Gemini API key override (e.g. provided via UI at runtime).
     """
-    def __init__(self):
+    def __init__(self, api_key: str = None):
+        key_to_use = api_key or GEMINI_API_KEY
+        self.api_key = key_to_use
+
         self.matcher = FuzzyNameMatcher()
-        self.classifier = QueryClassifier()
+        self.classifier = QueryClassifier(api_key=key_to_use)
         self.is_llm_ready = False
-        
-        # Try to initialize LlamaIndex Settings
-        if OPENROUTER_API_KEY and OPENROUTER_API_KEY != "your_openrouter_api_key_here":
+
+        # Try to initialize LlamaIndex Settings with the resolved key
+        if key_to_use and key_to_use not in ("your_gemini_api_key_here", ""):
             try:
-                setup_llamaindex_settings()
+                setup_llamaindex_settings(api_key=key_to_use)
                 self.is_llm_ready = True
             except Exception as e:
                 print(f"Warning: Failed to set up LlamaIndex settings: {e}. Using mock models.")
-                Settings.embed_model = MockEmbedding(embed_dim=1536)
+                Settings.embed_model = MockEmbedding(embed_dim=768)
                 Settings.llm = MockLLM()
         else:
-            print("Warning: OPENROUTER_API_KEY is not set or is placeholder. LLM retrieval will run in Mock Mode.")
-            Settings.embed_model = MockEmbedding(embed_dim=1536)
+            print("Warning: GEMINI_API_KEY is not set. LLM retrieval will run in Mock Mode.")
+            Settings.embed_model = MockEmbedding(embed_dim=768)
             Settings.llm = MockLLM()
-            
+
         # Initialize Chroma DB client
         try:
             self.db_client = chromadb.PersistentClient(path=str(CHROMA_DB_PATH))
@@ -70,50 +75,50 @@ class FilteredQueryEngine:
         classification = self.classifier.classify(query_str)
         if not classification["is_single_candidate"]:
             return {
-                "response": "Error: Multi-resume, comparison, ranking, or aggregation queries are not supported. Query blocked.",
+                "response": "❌ Multi-resume, comparison, ranking, or aggregation queries are not supported. Query blocked.",
                 "candidate_name": None,
                 "spelling_suggestion": None,
                 "is_blocked": True,
                 "blocked_reason": f"Classifier flagged comparison/multi-candidate: {classification['reason']}"
             }
-            
+
         # Step 2: Name Extraction and Fuzzy Matching
         matches = self.matcher.match_query(query_str)
-        
+
         # Block if multiple candidates are detected in the query text
         if len(matches) > 1:
             names_found = [m["canonical_name"] for m in matches]
             return {
-                "response": f"Error: Comparison or multi-candidate query detected ({', '.join(names_found)}). Query blocked.",
+                "response": f"❌ Multiple candidates detected ({', '.join(names_found)}). Please ask about one candidate at a time.",
                 "candidate_name": None,
                 "spelling_suggestion": None,
                 "is_blocked": True,
                 "blocked_reason": f"Fuzzy matcher detected multiple candidates: {names_found}"
             }
-            
+
         # Block if no candidate is detected in the query text
         if len(matches) == 0:
             return {
-                "response": "Error: No candidate name was detected in the query. Please specify a candidate's name (e.g. 'what are the skills of Ashok?').",
+                "response": "❌ No candidate name detected in the query. Please mention a candidate's name (e.g. 'What are Ashok's skills?').",
                 "candidate_name": None,
                 "spelling_suggestion": None,
                 "is_blocked": True,
                 "blocked_reason": "No candidate name found in query"
             }
-            
+
         # Exactly one candidate resolved
         match = matches[0]
         canonical_name = match["canonical_name"]
-        
+
         spelling_suggestion = None
         if match["is_spelling_mistake"]:
             spelling_suggestion = f"Showing results for '{canonical_name}' (corrected from '{match['query_token']}')"
-            
-        # If API key is not ready, return a mock response with match info (useful for testing/validation)
+
+        # If API key is not ready, return a mock response
         if not self.is_llm_ready or not self.index:
-            mock_res = f"[Mock Mode] Successfully resolved candidate to '{canonical_name}'. LLM retrieval is disabled."
+            mock_res = f"[Mock Mode] Candidate resolved to '{canonical_name}'. Add your Gemini API key to enable live answers."
             if spelling_suggestion:
-                mock_res += f"\nAlert: {spelling_suggestion}"
+                mock_res += f"\n✏️ {spelling_suggestion}"
             return {
                 "response": mock_res,
                 "candidate_name": canonical_name,
@@ -121,7 +126,7 @@ class FilteredQueryEngine:
                 "is_blocked": False,
                 "blocked_reason": None
             }
-            
+
         # Step 3: Run retrieval with metadata filters applied
         try:
             filters = MetadataFilters(
@@ -132,11 +137,10 @@ class FilteredQueryEngine:
                     )
                 ]
             )
-            
-            # Setup LlamaIndex query engine with filter
+
             query_engine = self.index.as_query_engine(filters=filters)
             response_obj = query_engine.query(query_str)
-            
+
             return {
                 "response": str(response_obj),
                 "candidate_name": canonical_name,
@@ -153,14 +157,14 @@ class FilteredQueryEngine:
                 "blocked_reason": f"Retrieval execution failure: {e}"
             }
 
+
 if __name__ == "__main__":
     import sys
     from pathlib import Path
     sys.path.append(str(Path(__file__).resolve().parent))
-    
-    # Simple self-test
+
     engine = FilteredQueryEngine()
-    
+
     test_queries = [
         "What are the skills of Pawan?",
         "Compare Ashok and Pawan's python experience",

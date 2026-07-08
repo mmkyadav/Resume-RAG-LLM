@@ -10,24 +10,23 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 RESUMES_DIR = BASE_DIR / "Resumes"
 CHROMA_DB_PATH = BASE_DIR / "chroma_db"
 
-# OpenRouter Settings
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1"
+# Gemini API Credentials
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
 # LLM and Embedding Models
-# Default to stable Qwen 2.5 models if Qwen3 is not fully propagated or has different IDs
-LLM_MODEL = os.getenv("LLM_MODEL", "qwen/qwen-2.5-72b-instruct")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "qwen/qwen3-embedding-8b")
+# Default to Google Gemini 1.5 Flash and text-embedding-004
+LLM_MODEL = os.getenv("LLM_MODEL", "models/gemini-1.5-flash")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
 
 # Chroma DB Collection Name
 COLLECTION_NAME = "resumes_collection"
 
 def validate_config():
-    """Validates that crucial settings like OpenRouter API Key are set."""
-    if not OPENROUTER_API_KEY:
+    """Validates that crucial settings like Gemini API Key are set."""
+    if not GEMINI_API_KEY:
         raise ValueError(
-            "OPENROUTER_API_KEY is not set in the environment or .env file. "
-            "Please create a .env file and set OPENROUTER_API_KEY."
+            "GEMINI_API_KEY is not set in the environment or .env file. "
+            "Please create a .env file and set GEMINI_API_KEY."
         )
     if not RESUMES_DIR.exists():
         raise FileNotFoundError(

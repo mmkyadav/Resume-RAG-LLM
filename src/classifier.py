@@ -1,36 +1,32 @@
 import json
 from llama_index.core import Settings
-from llama_index.llms.openai import OpenAI
+from llama_index.llms.gemini import Gemini
 from config import (
-    OPENROUTER_API_KEY,
-    OPENROUTER_BASE_URL,
+    GEMINI_API_KEY,
     LLM_MODEL
 )
 
 class QueryClassifier:
     """
-    QueryClassifier uses the configured OpenRouter LLM to classify if a query
+    QueryClassifier uses the configured Gemini LLM to classify if a query
     is about a single candidate or if it involves comparisons/aggregations/rankings
     of multiple candidates.
     """
-    def __init__(self):
+    def __init__(self, api_key: str = None):
         self.llm = None
-        # Only configure LLM if the API key is provided
-        if OPENROUTER_API_KEY and OPENROUTER_API_KEY != "your_openrouter_api_key_here":
+        key_to_use = api_key or GEMINI_API_KEY
+        
+        # Only configure LLM if an API key is available
+        if key_to_use and key_to_use != "your_gemini_api_key_here":
             try:
-                Settings.llm = OpenAI(
+                Settings.llm = Gemini(
                     model=LLM_MODEL,
-                    api_key=OPENROUTER_API_KEY,
-                    api_base=OPENROUTER_BASE_URL,
-                    temperature=0.0,
-                    additional_headers={
-                        "HTTP-Referer": "https://github.com/Antigravity/resume-rag-llm",
-                        "X-Title": "Resume RAG LLM"
-                    }
+                    api_key=key_to_use,
+                    temperature=0.0
                 )
                 self.llm = Settings.llm
             except Exception as e:
-                print(f"Warning: Failed to initialize LLM client: {e}. Using fallback classifier.")
+                print(f"Warning: Failed to initialize Gemini LLM client: {e}. Using fallback classifier.")
 
     def classify(self, query: str) -> dict:
         """

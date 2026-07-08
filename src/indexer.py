@@ -8,17 +8,14 @@ from llama_index.core import (
     VectorStoreIndex,
     StorageContext
 )
-from llama_index.llms.openai import OpenAI
-from llama_index.core.embeddings import BaseEmbedding
-from pydantic import PrivateAttr
-from openai import OpenAI as OpenAIClient
+from llama_index.llms.gemini import Gemini
+from llama_index.embeddings.gemini import GeminiEmbedding
 from llama_index.vector_stores.chroma import ChromaVectorStore
 from llama_index.core.node_parser import SentenceSplitter
 
 # Import project config and parser
 from config import (
-    OPENROUTER_API_KEY,
-    OPENROUTER_BASE_URL,
+    GEMINI_API_KEY,
     LLM_MODEL,
     EMBEDDING_MODEL,
     CHROMA_DB_PATH,
@@ -28,57 +25,21 @@ from config import (
 )
 from parser import parse_resume
 
-class OpenRouterEmbedding(BaseEmbedding):
-    _client: OpenAIClient = PrivateAttr()
-    model_name: str
-    api_key: str
-    api_base: str
-
-    def __init__(self, model_name: str, api_key: str, api_base: str, **kwargs):
-        super().__init__(model_name=model_name, api_key=api_key, api_base=api_base, **kwargs)
-        self._client = OpenAIClient(api_key=api_key, base_url=api_base)
-
-    @classmethod
-    def class_name(cls) -> str:
-        return "OpenRouterEmbedding"
-
-    def _get_query_embedding(self, query: str) -> list[float]:
-        response = self._client.embeddings.create(
-            input=[query],
-            model=self.model_name
-        )
-        return response.data[0].embedding
-
-    def _get_text_embedding(self, text: str) -> list[float]:
-        response = self._client.embeddings.create(
-            input=[text],
-            model=self.model_name
-        )
-        return response.data[0].embedding
-
-    async def _aget_query_embedding(self, query: str) -> list[float]:
-        return self._get_query_embedding(query)
-
-    async def _aget_text_embedding(self, text: str) -> list[float]:
-        return self._get_text_embedding(text)
-
-def setup_llamaindex_settings():
-    """Configures LlamaIndex to use OpenRouter models for LLM and Embeddings."""
-    # Configure Qwen LLM via OpenRouter OpenAI-compatible API
-    Settings.llm = OpenAI(
+def setup_llamaindex_settings(api_key: str = None):
+    """Configures LlamaIndex to use Google Gemini LLM and Embeddings."""
+    key_to_use = api_key or GEMINI_API_KEY
+    
+    # Configure Gemini LLM
+    Settings.llm = Gemini(
         model=LLM_MODEL,
-        api_key=OPENROUTER_API_KEY,
-        api_base=OPENROUTER_BASE_URL,
-        temperature=0.1,
-        # OpenRouter-specific header to identify the app
-        additional_headers={"HTTP-Referer": "https://github.com/Antigravity/resume-rag-llm", "X-Title": "Resume RAG LLM"}
+        api_key=key_to_use,
+        temperature=0.1
     )
     
-    # Configure Qwen Embeddings via custom OpenRouter Embedding wrapper
-    Settings.embed_model = OpenRouterEmbedding(
+    # Configure Gemini Embeddings
+    Settings.embed_model = GeminiEmbedding(
         model_name=EMBEDDING_MODEL,
-        api_key=OPENROUTER_API_KEY,
-        api_base=OPENROUTER_BASE_URL
+        api_key=key_to_use
     )
     
     # Use our Large-Chunk / Whole-Document strategy
@@ -92,7 +53,7 @@ def build_or_refresh_index(force_rebuild: bool = False):
     print("Validating configuration...")
     validate_config()
     
-    print("Setting up LLM and Embedding models (OpenRouter)...")
+    print("Setting up LLM and Embedding models (Gemini)...")
     setup_llamaindex_settings()
     
     print(f"Initializing local Chroma DB client at {CHROMA_DB_PATH}...")

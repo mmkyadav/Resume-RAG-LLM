@@ -139,27 +139,36 @@ class FuzzyNameMatcher:
         # Filtered tokens
         query_tokens = [w for w in words if w not in stop_words and len(w) > 1]
         
-        # Generate sliding windows to capture multi-word candidate mentions
-        query_windows = []
-        # Single words
-        for w in query_tokens:
-            query_windows.append(w)
-        # Pairs of adjacent words
+        # Generate sliding windows with token index ranges to enable greedy parsing
+        windows_with_indices = []
+        # Multi-word windows (adjacent pairs)
         for i in range(len(query_tokens) - 1):
-            query_windows.append(f"{query_tokens[i]} {query_tokens[i+1]}")
-            
-        matches_per_window = {}
-        for qw in query_windows:
+            windows_with_indices.append((i, i + 1, f"{query_tokens[i]} {query_tokens[i+1]}"))
+        # Single-word windows
+        for i in range(len(query_tokens)):
+            windows_with_indices.append((i, i, query_tokens[i]))
+
+        # Sort windows so that longer phrases are processed first
+        windows_with_indices.sort(key=lambda x: (x[1] - x[0]), reverse=True)
+
+        matches = []
+        consumed_indices = set()
+
+        for start_idx, end_idx, qw in windows_with_indices:
+            # Skip if any tokens in this window have already been consumed by a longer match
+            if any(idx in consumed_indices for idx in range(start_idx, end_idx + 1)):
+                continue
+
             best_match = None
             best_score = -1
-            
+
             for canonical_name, terms in self.candidate_terms.items():
                 for term in terms:
                     score = fuzz.ratio(qw, term)
                     if score >= self.threshold and score > best_score:
                         is_exact = self._is_exact_match(qw, canonical_name)
                         is_spelling_mistake = (score < 100.0) or (not is_exact)
-                        
+
                         best_score = score
                         best_match = {
                             "canonical_name": canonical_name,
@@ -168,15 +177,17 @@ class FuzzyNameMatcher:
                             "similarity": score,
                             "is_spelling_mistake": is_spelling_mistake
                         }
+
             if best_match:
-                matches_per_window[qw] = best_match
-                
+                matches.append(best_match)
+                # Consume these token indices
+                for idx in range(start_idx, end_idx + 1):
+                    consumed_indices.add(idx)
+
         # Deduplicate matches by canonical name
         unique_canonical_matches = {}
-        for match in matches_per_window.values():
+        for match in matches:
             name = match["canonical_name"]
-            # If the same candidate is matched by multiple windows (e.g. "ashok" and "ashok reddy"),
-            # keep the one with higher similarity score. If scores are equal, prefer the longer query token.
             if name not in unique_canonical_matches:
                 unique_canonical_matches[name] = match
             else:
@@ -186,8 +197,21 @@ class FuzzyNameMatcher:
                 elif match["similarity"] == existing["similarity"]:
                     if len(match["query_token"]) > len(existing["query_token"]):
                         unique_canonical_matches[name] = match
-                        
-        return list(unique_canonical_matches.values())
+
+        matches_list = list(unique_canonical_matches.values())
+        if len(matches_list) > 1:
+            # Sort matches so the best candidate match is first
+            matches_list.sort(key=lambda m: (m["similarity"], len(m["query_token"])), reverse=True)
+            top_match = matches_list[0]
+            second_match = matches_list[1]
+            
+            # If the top match is strictly better (higher score OR same score with longer query token),
+            # return only the top candidate.
+            if (top_match["similarity"] > second_match["similarity"]) or \
+               (top_match["similarity"] == second_match["similarity"] and len(top_match["query_token"]) > len(second_match["query_token"])):
+                return [top_match]
+                
+        return matches_list
 
 if __name__ == "__main__":
     import sys

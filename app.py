@@ -7,6 +7,10 @@ Commit 1: Design main Streamlit layout and session state
 
 import sys
 from pathlib import Path
+import nest_asyncio
+
+# Fix: allow nested event loops so google-genai async SDK works inside Streamlit
+nest_asyncio.apply()
 
 # Add src/ to path so modules can be imported cleanly
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
@@ -439,19 +443,18 @@ def _init_session_state():
 _init_session_state()
 
 # ──────────────────────────────────────────────────────────────────────────────
-# Lazy Engine Loader
+# Lazy Engine Loader  (API key is read from .env automatically)
 # ──────────────────────────────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
-def _load_engine(api_key: str = ""):
+def _load_engine():
     """
     Loads and caches the FilteredQueryEngine.
-    api_key is passed from the sidebar at runtime so the user can provide
-    their Gemini key without editing .env.
+    The Gemini API key is read automatically from the .env file via config.py.
     Returns (engine, candidate_list, error_message).
     """
     try:
         from retriever import FilteredQueryEngine
-        engine = FilteredQueryEngine(api_key=api_key or None)
+        engine = FilteredQueryEngine()
         candidates = sorted(engine.matcher.candidates)
         return engine, candidates, None
     except Exception as exc:
@@ -459,24 +462,10 @@ def _load_engine(api_key: str = ""):
 
 
 def ensure_engine():
-    """
-    Ensures the engine is loaded into session state.
-    Re-initialises when the user provides or changes their API key.
-    """
-    api_key = st.session_state.get("gemini_api_key_input", "").strip()
-    prev_key = st.session_state.get("_prev_api_key", None)
-
-    # Force re-init if the key changed
-    if api_key != prev_key:
-        st.session_state.engine = None
-        st.session_state.engine_ready = False
-        st.session_state.engine_error = None
-        st.session_state["_prev_api_key"] = api_key
-        _load_engine.clear()
-
+    """Ensures the engine is loaded into session state (called once per session)."""
     if not st.session_state.engine_ready and st.session_state.engine is None:
-        with st.spinner("⚙️ Initialising RAG pipeline…"):
-            engine, candidates, err = _load_engine(api_key=api_key)
+        with st.spinner("Initialising RAG pipeline…"):
+            engine, candidates, err = _load_engine()
         st.session_state.engine = engine
         st.session_state.candidate_list = candidates
         st.session_state.engine_error = err
@@ -500,29 +489,13 @@ def render_sidebar():
         )
         st.divider()
 
-        # ── Gemini API Key Input ──
-        st.markdown("**🔑 Gemini API Key**")
-        st.text_input(
-            label="Gemini API Key",
-            placeholder="Paste your GEMINI_API_KEY here…",
-            type="password",
-            key="gemini_api_key_input",
-            label_visibility="collapsed",
-            help="Your key is used only for this session and is never stored.",
-        )
-        st.caption("[Get a free key →](https://aistudio.google.com/app/apikey)")
-
-        st.divider()
-
         # ── Status indicator ──
         if st.session_state.engine_ready:
-            api_key_set = bool(st.session_state.get("gemini_api_key_input", "").strip())
-            label = "✅ Pipeline Ready (Live LLM)" if api_key_set else "✅ Pipeline Ready (Mock Mode)"
-            st.success(label, icon=None)
+            st.success("Pipeline Ready — Gemini Live", icon=None)
         elif st.session_state.engine_error:
-            st.warning(f"⚠️ {st.session_state.engine_error[:120]}", icon=None)
+            st.warning(f"{st.session_state.engine_error[:160]}", icon=None)
         else:
-            st.info("⏳ Not initialised yet")
+            st.info("Not initialised yet")
 
         st.divider()
 

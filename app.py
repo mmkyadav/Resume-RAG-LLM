@@ -206,6 +206,31 @@ div[data-testid="stTextInput"] label {
     font-size: 1rem !important;
     font-weight: 500 !important;
 }
+
+/* Streamlit button text and background style overrides */
+div.stButton button {
+    background-color: #3E8BFF !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+    padding: 8px 16px !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+/* Explicit color formatting for text inside the button elements */
+div.stButton button p,
+div.stButton button span {
+    color: #FFFFFF !important;
+}
+
+/* Streamlit button hover state styling */
+div.stButton button:hover {
+    background-color: #2563EB !important;
+    color: #FFFFFF !important;
+    border-color: #3E8BFF !important;
+    box-shadow: 0 0 12px rgba(62, 139, 255, 0.4) !important;
+}
 </style>
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)

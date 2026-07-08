@@ -208,7 +208,8 @@ div[data-testid="stTextInput"] label {
 }
 
 /* Streamlit button text and background style overrides */
-div.stButton button {
+div.stButton button,
+div[data-testid="stFormSubmitButton"] button {
     background-color: #3E8BFF !important;
     color: #FFFFFF !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
@@ -220,12 +221,15 @@ div.stButton button {
 
 /* Explicit color formatting for text inside the button elements */
 div.stButton button p,
-div.stButton button span {
+div.stButton button span,
+div[data-testid="stFormSubmitButton"] button p,
+div[data-testid="stFormSubmitButton"] button span {
     color: #FFFFFF !important;
 }
 
 /* Streamlit button hover state styling */
-div.stButton button:hover {
+div.stButton button:hover,
+div[data-testid="stFormSubmitButton"] button:hover {
     background-color: #2563EB !important;
     color: #FFFFFF !important;
     border-color: #3E8BFF !important;

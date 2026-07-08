@@ -308,10 +308,10 @@ html, body, [class*="css"] {
 
 /* ── Input area styling ── */
 .stTextInput input, .stTextArea textarea {
-    background: var(--bg-card) !important;
+    background: #ffffff !important;
     border: 1px solid var(--border) !important;
     border-radius: var(--radius-md) !important;
-    color: var(--text-primary) !important;
+    color: #000000 !important;
     font-family: 'Inter', sans-serif !important;
     font-size: 0.9rem !important;
     transition: var(--transition) !important;
@@ -757,10 +757,8 @@ def main():
     render_stats()
 
     # ── Chat Window ──
-    with st.container():
-        st.markdown('<div class="chat-window">', unsafe_allow_html=True)
+    with st.container(height=500):
         render_chat_window()
-        st.markdown('</div>', unsafe_allow_html=True)
 
     # ── Quick Questions ──
     render_quick_questions()

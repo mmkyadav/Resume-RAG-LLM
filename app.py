@@ -73,6 +73,23 @@ html, body, [class*="css"] {
     background-color: rgba(0, 0, 0, 0) !important;
 }
 
+/* Force all text inside the main content area to be off-white and high contrast */
+[data-testid="stAppViewContainer"] p, 
+[data-testid="stAppViewContainer"] span, 
+[data-testid="stAppViewContainer"] li, 
+[data-testid="stAppViewContainer"] label, 
+[data-testid="stAppViewContainer"] h1, 
+[data-testid="stAppViewContainer"] h2, 
+[data-testid="stAppViewContainer"] h3, 
+[data-testid="stAppViewContainer"] h4 {
+    color: #F1F5F9 !important;
+}
+
+/* Highlight bold elements in a bright blue color for readability */
+[data-testid="stAppViewContainer"] strong {
+    color: #3E8BFF !important;
+}
+
 /* Chat bubble styling */
 .chat-user-row {
     display: flex;
@@ -166,6 +183,18 @@ div[data-testid="stTextInput"] input {
     padding: 10px 14px !important;
     font-size: 0.95rem !important;
     transition: all 0.2s ease-in-out !important;
+}
+div[data-testid="stTextInput"] input::-webkit-input-placeholder {
+    color: #CBD5E1 !important;
+    opacity: 1 !important;
+}
+div[data-testid="stTextInput"] input::-moz-placeholder {
+    color: #CBD5E1 !important;
+    opacity: 1 !important;
+}
+div[data-testid="stTextInput"] input::placeholder {
+    color: #CBD5E1 !important;
+    opacity: 1 !important;
 }
 div[data-testid="stTextInput"] input:focus {
     border-color: #3E8BFF !important;

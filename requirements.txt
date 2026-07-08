@@ -1,0 +1,11 @@
+llama-index>=0.10.0
+llama-index-vector-stores-chroma
+llama-index-llms-openai
+llama-index-embeddings-openai
+chromadb
+streamlit
+pypdf
+python-docx
+python-dotenv
+rapidfuzz
+openai

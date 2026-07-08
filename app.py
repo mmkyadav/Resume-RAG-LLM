@@ -148,6 +148,27 @@ html, body, [class*="css"] {
     font-family: 'Space Mono', monospace;
     font-size: 0.85rem;
 }
+
+/* ── Text Input Styling ── */
+div[data-testid="stTextInput"] input {
+    background-color: #1E293B !important;
+    color: #FFFFFF !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-radius: 8px !important;
+    padding: 10px 14px !important;
+    font-size: 0.95rem !important;
+    transition: all 0.2s ease-in-out !important;
+}
+div[data-testid="stTextInput"] input:focus {
+    border-color: #3E8BFF !important;
+    box-shadow: 0 0 10px rgba(62, 139, 255, 0.4) !important;
+    outline: none !important;
+}
+div[data-testid="stTextInput"] label {
+    color: #E2E8F0 !important;
+    font-size: 1rem !important;
+    font-weight: 500 !important;
+}
 </style>
 """
 st.markdown(CUSTOM_CSS, unsafe_allow_html=True)
@@ -283,6 +304,45 @@ def render_sidebar():
             st.markdown(f"**LLM Model:**\n`{LLM_MODEL}`")
             st.markdown(f"**Embeddings:**\n`{EMBEDDING_MODEL}` (Local CPU)")
             st.markdown(f"**Vector Store:**\nChromaDB Collection: `{COLLECTION_NAME}`")
+
+        # --- UI Preferences ---
+        st.markdown("### 🛠️ UI Preferences")
+        debug_mode = st.checkbox("Enable Debug Mode", value=False, help="Show detailed retrieval scores, intent logs, and timings.")
+        st.session_state.debug_mode = debug_mode
+
+        # --- Collapsible Debug Diagnostics in Sidebar ---
+        if debug_mode:
+            st.divider()
+            with st.expander("🔍 Latest Query Diagnostics", expanded=True):
+                last_assistant_msg = None
+                for msg in reversed(st.session_state.chat_history):
+                    if msg["role"] == "assistant" and msg.get("debug_info"):
+                        last_assistant_msg = msg
+                        break
+                
+                if last_assistant_msg:
+                    dbg = last_assistant_msg["debug_info"]
+                    st.markdown(f"**Total Latency:** `{dbg.get('total_time_ms', 0.0):.1f} ms`")
+                    st.markdown(f"- Retrieval: `{dbg.get('retrieval_time_ms', 0.0):.1f} ms`")
+                    st.markdown(f"- Generation: `{dbg.get('generation_time_ms', 0.0):.1f} ms`")
+                    st.markdown(f"**Intent Detection:** `{dbg.get('intent', 'N/A')}`")
+                    st.markdown(f"**Resolved Candidate:** `{dbg.get('candidate_name', 'N/A')}`")
+                    st.markdown(f"**Active Metadata Filters:** `{dbg.get('metadata_filters', 'N/A')}`")
+                    
+                    nodes = dbg.get("retrieved_nodes", [])
+                    if nodes:
+                        st.markdown("**Retrieved Chunk Scores:**")
+                        for idx, node in enumerate(nodes, 1):
+                            st.markdown(f"- Chunk {idx}: `{node.get('score', 0.0):.4f}` ({node.get('source', 'N/A')})")
+                    
+                    if dbg.get("prompt"):
+                        with st.expander("View Context Prompt", expanded=False):
+                            st.text_area("Context Prompt", value=dbg.get("prompt"), height=150, key="sidebar_prompt_area", disabled=True)
+                    if dbg.get("openrouter_response"):
+                        with st.expander("View Raw LLM Response", expanded=False):
+                            st.text_area("LLM Response", value=dbg.get("openrouter_response"), height=100, key="sidebar_res_area", disabled=True)
+                else:
+                    st.info("No query diagnostics available yet. Run a query in the chat.")
             
         if st.button("🗑️ Clear Chat History", use_container_width=True):
             st.session_state.chat_history = []
@@ -310,283 +370,76 @@ def main():
         unsafe_allow_html=True
     )
 
-    # --- Top Stats Banner ---
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        st.markdown(
-            f"""
-            <div class="metric-card">
-              <div style="font-size:0.8rem;color:#94A3B8;">Indexed Candidates</div>
-              <div style="font-size:1.8rem;font-weight:700;color:#3E8BFF;">{len(st.session_state.candidate_list)}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    with c2:
-        st.markdown(
-            f"""
-            <div class="metric-card">
-              <div style="font-size:0.8rem;color:#94A3B8;">Queries Processed</div>
-              <div style="font-size:1.8rem;font-weight:700;color:#9D4EDD;">{st.session_state.total_queries}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    with c3:
-        st.markdown(
-            f"""
-            <div class="metric-card">
-              <div style="font-size:0.8rem;color:#94A3B8;">Avg Retrieval + Gen Latency</div>
-              <div style="font-size:1.8rem;font-weight:700;color:#10B981;">{st.session_state.avg_latency_ms:.0f} ms</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-    with c4:
-        st.markdown(
-            f"""
-            <div class="metric-card">
-              <div style="font-size:0.8rem;color:#94A3B8;">Blocked / Corrected Queries</div>
-              <div style="font-size:1.8rem;font-weight:700;color:#F59E0B;">{st.session_state.blocked_queries} / {st.session_state.corrected_queries}</div>
-            </div>
-            """,
-            unsafe_allow_html=True
-        )
-
-    st.markdown("<div style='margin-bottom:15px;'></div>", unsafe_allow_html=True)
-
-    # --- Workspace Tabs ---
-    tab_chat, tab_resumes, tab_performance = st.tabs([
-        "💬 Recruiter AI Assistant", 
-        "📄 Candidate Resumes Inspector", 
-        "📊 System Performance Metrics"
-    ])
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # TAB 1: Chat Assistant
-    # ──────────────────────────────────────────────────────────────────────────
-    with tab_chat:
-        # Chat container window
-        chat_container = st.container(height=450)
-        
-        # Render Chat History
-        with chat_container:
-            if not st.session_state.chat_history:
-                st.markdown(
-                    """
-                    <div style="text-align:center;padding:80px 20px;color:#94A3B8;">
-                      <div style="font-size:3rem;margin-bottom:10px;">💬</div>
-                      <h4 style="margin:0;font-weight:600;color:#E2E8F0;">No active chat session</h4>
-                      <p style="margin:4px 0 0 0;font-size:0.9rem;">Ask a question about a candidate (e.g. "What are Trinadh's Python skills?") to get started.</p>
-                    </div>
-                    """,
-                    unsafe_allow_html=True
-                )
-            else:
-                for i, msg in enumerate(st.session_state.chat_history):
-                    role = msg["role"]
-                    content = msg["content"]
-                    meta = msg.get("metadata", {})
-                    debug = msg.get("debug_info", {})
-                    
-                    if role == "user":
-                        st.markdown(
-                            f"""
-                            <div class="chat-user-row">
-                              <div class="chat-user-bubble">{content}</div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                    else:
-                        st.markdown(
-                            f"""
-                            <div class="chat-assistant-row">
-                              <div class="chat-assistant-avatar">AI</div>
-                              <div style="flex:1;">
-                                {'<div class="badge-candidate">👤 ' + meta["candidate_name"] + '</div>' if meta.get("candidate_name") else ''}
-                                <div class="chat-assistant-bubble">{content}</div>
-                              </div>
-                            </div>
-                            """,
-                            unsafe_allow_html=True
-                        )
-                        
-                        # Show spelling suggestion if spelling correction occurred
-                        if meta.get("spelling_suggestion"):
-                            st.info(meta["spelling_suggestion"], icon="✏️")
-                            
-                        # Show blocked reason if query was blocked
-                        if meta.get("is_blocked") and meta.get("blocked_reason"):
-                            st.error(f"Reason: {meta['blocked_reason']}", icon="🚫")
-
-                        # Display Inspections Panel (Debug panel toggle)
-                        if debug:
-                            with st.expander("🔍 Recruiter Inspection & Debug Panel", expanded=False):
-                                col_dbg1, col_dbg2 = st.columns(2)
-                                with col_dbg1:
-                                    st.markdown("**Intent Classification:**")
-                                    st.code(debug.get("intent", "N/A"))
-                                    st.markdown(f"**Resolved Candidate:** `{debug.get('candidate_name', 'N/A')}`")
-                                    st.markdown(f"**Active Metadata Filters:** `{debug.get('metadata_filters', 'N/A')}`")
-                                with col_dbg2:
-                                    st.markdown("**Latency Profiler:**")
-                                    st.markdown(f"- Retrieval latency: `{debug.get('retrieval_time_ms', 0.0):.1f} ms`")
-                                    st.markdown(f"- LLM generation latency: `{debug.get('generation_time_ms', 0.0):.1f} ms`")
-                                    st.markdown(f"- Total pipeline response time: `{debug.get('total_time_ms', 0.0):.1f} ms`")
-
-                                # Similarity scores table
-                                nodes = debug.get("retrieved_nodes", [])
-                                if nodes:
-                                    st.markdown("**Retrieved Vector Chunks & Similarity Scores:**")
-                                    scores_data = []
-                                    for idx, node in enumerate(nodes, 1):
-                                        scores_data.append({
-                                            "Chunk ID": idx,
-                                            "Source File": node.get("source", "N/A"),
-                                            "Similarity Score": f"{node.get('score', 0.0):.4f}",
-                                            "Text Snippet": node.get("text", "")[:120] + "..."
-                                        })
-                                    st.table(scores_data)
-
-                                # Constructed Prompts
-                                if debug.get("prompt"):
-                                    st.markdown("**Constructed Context Prompt (sent to OpenRouter):**")
-                                    st.text_area("Prompt Details", value=debug.get("prompt"), height=150, key=f"prompt_area_{i}", disabled=True)
-                                    st.markdown("**Raw OpenRouter LLM Response:**")
-                                    st.text_area("OpenRouter Response", value=debug.get("openrouter_response"), height=100, key=f"or_res_area_{i}", disabled=True)
-
-        # Quick Queries Trigger Buttons
-        st.markdown("<span style='font-size:0.85rem;color:#94A3B8;'>⚡ Quick Questions:</span>", unsafe_allow_html=True)
-        col_q1, col_q2, col_q3, col_q4, col_q5 = st.columns(5)
-        with col_q1:
-            if st.button("Summarize Trinadh", use_container_width=True):
-                submit_query("Summarize Trinadh's resume")
-        with col_q2:
-            if st.button("Trinadh Certifications", use_container_width=True):
-                submit_query("What are Trinadh's certifications?")
-        with col_q3:
-            if st.button("Compare Ashok & Pawan", use_container_width=True):
-                submit_query("Compare Ashok and Pawan")
-        with col_q4:
-            if st.button("Best AI Engineer", use_container_width=True):
-                submit_query("Recommend the best AI Engineer")
-        with col_q5:
-            if st.button("LangGraph Candidates", use_container_width=True):
-                submit_query("Find candidates with LangGraph")
-
-        st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
-
-        # Chat Input Form
-        with st.form("query_form", clear_on_submit=True):
-            col_input, col_submit = st.columns([5, 1])
-            with col_input:
-                user_input = st.text_input(
-                    label="recruiter_query_box",
-                    placeholder="Ask about a candidate (e.g. 'What are Yasaswi's projects?' or 'Summarize Ashok Reddy')...",
-                    label_visibility="collapsed"
-                )
-            with col_submit:
-                submitted = st.form_submit_button("Send Query →", use_container_width=True)
-                
-            if submitted and user_input.strip():
-                submit_query(user_input)
-                st.rerun()
-
-    # ──────────────────────────────────────────────────────────────────────────
-    # TAB 2: Resume Inspector
-    # ──────────────────────────────────────────────────────────────────────────
-    with tab_resumes:
-        st.markdown("### 📄 parsed Candidate Resume Inspector")
-        st.markdown("<span style='font-size:0.85rem;color:#94A3B8;'>Examine the raw extracted text content parsed from candidates' PDF and DOCX files.</span>", unsafe_allow_html=True)
-        st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
-        
-        candidates = st.session_state.candidate_list
-        if not candidates:
-            st.info("No candidate resumes indexed. Click 'Index Resume Collection' in the sidebar.")
+    # Chat container window
+    chat_container = st.container(height=520)
+    
+    # Render Chat History
+    with chat_container:
+        if not st.session_state.chat_history:
+            st.markdown(
+                """
+                <div style="text-align:center;padding:120px 20px;color:#94A3B8;">
+                  <div style="font-size:3rem;margin-bottom:10px;">💬</div>
+                  <h4 style="margin:0;font-weight:600;color:#E2E8F0;">No active chat session</h4>
+                  <p style="margin:4px 0 0 0;font-size:0.9rem;">Ask a question about a candidate (e.g. "What are Trinadh's Python skills?") to get started.</p>
+                </div>
+                """,
+                unsafe_allow_html=True
+            )
         else:
-            selected_candidate = st.selectbox("Select Candidate to Inspect", candidates)
-            
-            # Fetch the text of the selected candidate by querying ChromaDB metadata
-            if st.session_state.engine and st.session_state.engine.chroma_collection:
-                try:
-                    # Query Chroma directly for nodes matching the candidate name
-                    results = st.session_state.engine.chroma_collection.get(
-                        where={"candidate_name": selected_candidate}
+            for i, msg in enumerate(st.session_state.chat_history):
+                role = msg["role"]
+                content = msg["content"]
+                meta = msg.get("metadata", {})
+                
+                if role == "user":
+                    st.markdown(
+                        f"""
+                        <div class="chat-user-row">
+                          <div class="chat-user-bubble">{content}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                else:
+                    st.markdown(
+                        f"""
+                        <div class="chat-assistant-row">
+                          <div class="chat-assistant-avatar">AI</div>
+                          <div style="flex:1;">
+                            {'<div class="badge-candidate">👤 ' + meta["candidate_name"] + '</div>' if meta.get("candidate_name") else ''}
+                            <div class="chat-assistant-bubble">{content}</div>
+                          </div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
                     )
                     
-                    if results and results.get("documents"):
-                        # Chroma stores chunks. Combine documents to show full text
-                        docs = results.get("documents", [])
-                        full_resume_text = "\n\n--- Chunk Split ---\n\n".join(docs)
+                    # Show spelling suggestion if spelling correction occurred
+                    if meta.get("spelling_suggestion"):
+                        st.info(meta["spelling_suggestion"], icon="✏️")
                         
-                        st.markdown(f"**Filename:** `{results.get('metadatas', [{}])[0].get('source_file', 'Unknown')}`")
-                        st.text_area("Full Extracted Text:", value=full_resume_text, height=450, disabled=True)
-                    else:
-                        st.warning("No parsed document content found for this candidate.")
-                except Exception as e:
-                    st.error(f"Error fetching candidate resume: {e}")
+                    # Show blocked reason if query was blocked
+                    if meta.get("is_blocked") and meta.get("blocked_reason"):
+                        st.error(f"Reason: {meta['blocked_reason']}", icon="🚫")
 
-    # ──────────────────────────────────────────────────────────────────────────
-    # TAB 3: System Performance
-    # ──────────────────────────────────────────────────────────────────────────
-    with tab_performance:
-        st.markdown("### 📊 System Performance Dashboard & Metrics")
-        
-        p_col1, p_col2 = st.columns(2)
-        with p_col1:
-            st.markdown("#### Performance Metrics")
-            st.markdown(f"- **Total Queries Processed:** `{st.session_state.total_queries}`")
-            st.markdown(f"- **Intent Violation Rejections:** `{st.session_state.blocked_queries}`")
-            st.markdown(f"- **Candidate Name Spelling Corrections:** `{st.session_state.corrected_queries}`")
-            st.markdown(f"- **Average Retrieval + LLM Generation Latency:** `{st.session_state.avg_latency_ms:.1f} ms`")
+    st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
+
+    # Chat Input Form
+    with st.form("query_form", clear_on_submit=True):
+        col_input, col_submit = st.columns([5, 1])
+        with col_input:
+            user_input = st.text_input(
+                label="recruiter_query_box",
+                placeholder="Ask about a candidate (e.g. 'What are Yasaswi's projects?' or 'Summarize Ashok Reddy')...",
+                label_visibility="collapsed"
+            )
+        with col_submit:
+            submitted = st.form_submit_button("Send Query →", use_container_width=True)
             
-        with p_col2:
-            st.markdown("#### Pipeline Constraints Health Check")
-            st.markdown("✓ **Local Intent Detection:** `Active` (Rule Heuristics, 0ms network latency)")
-            st.markdown("✓ **ChromaDB Vector Store Connection:** `Active` (Persistent Storage)")
-            st.markdown("✓ **Embedding Model Execution:** `Local CPU` (`BAAI/bge-base-en-v1.5`) ")
-            st.markdown("✓ **Answer Generation Endpoint:** `Active` (OpenRouter API completions)")
-            st.markdown("✓ **Duplicate Indexing Prevention:** `Verified` (Fresh deletion on rebuild)")
-
-        st.divider()
-        st.markdown("#### Run RAG Pipeline Quality Evaluator")
-        st.markdown("<span style='font-size:0.85rem;color:#94A3B8;'>Runs the LLM-as-a-judge suite to calculate Faithfulness, Answer Relevancy, Context Precision, and Correctness scores. Saves reports locally.</span>", unsafe_allow_html=True)
-        st.markdown("<div style='margin-bottom:10px;'></div>", unsafe_allow_html=True)
-        
-        if st.button("🧪 Execute RAG Quality Evaluations", use_container_width=True):
-            with st.spinner("Running evaluator suite on standard benchmarks..."):
-                try:
-                    from evaluator import RAGEvaluator
-                    evaluator = RAGEvaluator()
-                    report = evaluator.run_evaluation()
-                    
-                    st.success("Evaluation complete! Reports saved to `evaluation_report.json` and `evaluation_report.md`.")
-                    
-                    # Display results in columns
-                    ev_cols = st.columns(5)
-                    summary = report["summary"]
-                    metrics_labels = {
-                        "average_faithfulness": ("Faithfulness", "#3E8BFF"),
-                        "average_answer_relevancy": ("Relevancy", "#9D4EDD"),
-                        "average_context_precision": ("Precision", "#10B981"),
-                        "average_context_recall": ("Recall", "#F59E0B"),
-                        "average_answer_correctness": ("Correctness", "#EF4444")
-                    }
-                    for col, (key, (label, color)) in zip(ev_cols, metrics_labels.items()):
-                        with col:
-                            score = summary.get(key, 0.5)
-                            st.markdown(
-                                f"""
-                                <div style="background:var(--bg-card);border:1px solid var(--border-color);border-radius:10px;padding:12px;text-align:center;">
-                                  <div style="font-size:0.85rem;color:#94A3B8;">{label}</div>
-                                  <div style="font-size:1.8rem;font-weight:700;color:{color};">{score:.2f}</div>
-                                </div>
-                                """,
-                                unsafe_allow_html=True
-                            )
-                except Exception as eval_exc:
-                    st.error(f"Evaluation suite failed to complete: {eval_exc}")
+        if submitted and user_input.strip():
+            submit_query(user_input)
+            st.rerun()
 
 
 def submit_query(query: str):

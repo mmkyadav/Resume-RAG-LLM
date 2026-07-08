@@ -65,6 +65,14 @@ html, body, [class*="css"] {
     color: var(--text-main) !important;
 }
 
+/* Streamlit application layout background overrides */
+[data-testid="stAppViewContainer"], [data-testid="stApp"], .main, .stApp {
+    background-color: #0B0F19 !important;
+}
+[data-testid="stHeader"] {
+    background-color: rgba(0, 0, 0, 0) !important;
+}
+
 /* Chat bubble styling */
 .chat-user-row {
     display: flex;
@@ -100,12 +108,12 @@ html, body, [class*="css"] {
     box-shadow: 0 0 10px rgba(62, 139, 255, 0.4);
 }
 .chat-assistant-bubble {
-    background: var(--bg-card);
+    background: #1E293B !important;
     border: 1px solid var(--border-color);
     border-radius: 4px 18px 18px 18px;
     padding: 14px 18px;
     max-width: 80%;
-    color: var(--text-main);
+    color: var(--text-main) !important;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
     backdrop-filter: blur(8px);
 }
@@ -392,28 +400,10 @@ def main():
                 content = msg["content"]
                 meta = msg.get("metadata", {})
                 
-                if role == "user":
-                    st.markdown(
-                        f"""
-                        <div class="chat-user-row">
-                          <div class="chat-user-bubble">{content}</div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
-                else:
-                    st.markdown(
-                        f"""
-                        <div class="chat-assistant-row">
-                          <div class="chat-assistant-avatar">AI</div>
-                          <div style="flex:1;">
-                            {'<div class="badge-candidate">👤 ' + meta["candidate_name"] + '</div>' if meta.get("candidate_name") else ''}
-                            <div class="chat-assistant-bubble">{content}</div>
-                          </div>
-                        </div>
-                        """,
-                        unsafe_allow_html=True
-                    )
+                with st.chat_message(role):
+                    if role == "assistant" and meta.get("candidate_name"):
+                        st.markdown(f"👤 **Candidate: {meta['candidate_name']}**")
+                    st.markdown(content)
                     
                     # Show spelling suggestion if spelling correction occurred
                     if meta.get("spelling_suggestion"):

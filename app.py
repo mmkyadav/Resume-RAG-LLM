@@ -442,14 +442,16 @@ _init_session_state()
 # Lazy Engine Loader
 # ──────────────────────────────────────────────────────────────────────────────
 @st.cache_resource(show_spinner=False)
-def _load_engine():
+def _load_engine(api_key: str = ""):
     """
     Loads and caches the FilteredQueryEngine.
+    api_key is passed from the sidebar at runtime so the user can provide
+    their Gemini key without editing .env.
     Returns (engine, candidate_list, error_message).
     """
     try:
         from retriever import FilteredQueryEngine
-        engine = FilteredQueryEngine()
+        engine = FilteredQueryEngine(api_key=api_key or None)
         candidates = sorted(engine.matcher.candidates)
         return engine, candidates, None
     except Exception as exc:
@@ -457,10 +459,24 @@ def _load_engine():
 
 
 def ensure_engine():
-    """Ensures the engine is loaded into session state (called once per session)."""
+    """
+    Ensures the engine is loaded into session state.
+    Re-initialises when the user provides or changes their API key.
+    """
+    api_key = st.session_state.get("gemini_api_key_input", "").strip()
+    prev_key = st.session_state.get("_prev_api_key", None)
+
+    # Force re-init if the key changed
+    if api_key != prev_key:
+        st.session_state.engine = None
+        st.session_state.engine_ready = False
+        st.session_state.engine_error = None
+        st.session_state["_prev_api_key"] = api_key
+        _load_engine.clear()
+
     if not st.session_state.engine_ready and st.session_state.engine is None:
         with st.spinner("⚙️ Initialising RAG pipeline…"):
-            engine, candidates, err = _load_engine()
+            engine, candidates, err = _load_engine(api_key=api_key)
         st.session_state.engine = engine
         st.session_state.candidate_list = candidates
         st.session_state.engine_error = err
@@ -484,9 +500,25 @@ def render_sidebar():
         )
         st.divider()
 
+        # ── Gemini API Key Input ──
+        st.markdown("**🔑 Gemini API Key**")
+        st.text_input(
+            label="Gemini API Key",
+            placeholder="Paste your GEMINI_API_KEY here…",
+            type="password",
+            key="gemini_api_key_input",
+            label_visibility="collapsed",
+            help="Your key is used only for this session and is never stored.",
+        )
+        st.caption("[Get a free key →](https://aistudio.google.com/app/apikey)")
+
+        st.divider()
+
         # ── Status indicator ──
         if st.session_state.engine_ready:
-            st.success("✅ Pipeline Ready", icon=None)
+            api_key_set = bool(st.session_state.get("gemini_api_key_input", "").strip())
+            label = "✅ Pipeline Ready (Live LLM)" if api_key_set else "✅ Pipeline Ready (Mock Mode)"
+            st.success(label, icon=None)
         elif st.session_state.engine_error:
             st.warning(f"⚠️ {st.session_state.engine_error[:120]}", icon=None)
         else:

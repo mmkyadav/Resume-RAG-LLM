@@ -1,6 +1,6 @@
 # Resume RAG LLM 🤖
 
-A **Retrieval-Augmented Generation (RAG)** system that answers detailed questions about individual candidates from a directory of resumes. Built with **LlamaIndex**, **Chroma DB**, **Qwen LLMs via OpenRouter**, and a premium **Streamlit** interface.
+A **Retrieval-Augmented Generation (RAG)** system that answers detailed questions about individual candidates from a directory of resumes. Built with **LlamaIndex**, **Chroma DB**, **Google Gemini LLMs**, and a premium **Streamlit** interface.
 
 ---
 
@@ -14,6 +14,7 @@ A **Retrieval-Augmented Generation (RAG)** system that answers detailed question
 | 💬 **Chat History** | Full conversation history with per-message metadata |
 | 📊 **Live Stats** | Query counts, correction alerts, and blocked-query counters |
 | 🎨 **Premium Dark UI** | Glassmorphism design with smooth animations |
+| 🔑 **In-App API Key Input** | Enter your Gemini API key directly in the sidebar — no `.env` edit needed |
 
 ---
 
@@ -23,6 +24,7 @@ A **Retrieval-Augmented Generation (RAG)** system that answers detailed question
 ┌─────────────────────────────────────────────────────────────┐
 │                    app.py  (Streamlit UI)                   │
 │   Chat window · Stats · Spelling alerts · Blocked alerts    │
+│   🔑 Gemini API Key input in sidebar (live engine re-init)  │
 └────────────────────────┬────────────────────────────────────┘
                          │ query(str)
 ┌────────────────────────▼────────────────────────────────────┐
@@ -33,8 +35,8 @@ A **Retrieval-Augmented Generation (RAG)** system that answers detailed question
 └─────────────────────────────────────────────────────────────┘
               │                    │                    │
    src/classifier.py      src/matcher.py        src/indexer.py
-   LLM / heuristic        rapidfuzz             Build Chroma index
-   single vs multi        fuzzy matching         on first run
+   Gemini LLM or          rapidfuzz             Build Chroma index
+   heuristic fallback     fuzzy matching         with Gemini Embeddings
 ```
 
 ---
@@ -45,8 +47,8 @@ A **Retrieval-Augmented Generation (RAG)** system that answers detailed question
 |---|---|
 | **Frontend** | [Streamlit](https://streamlit.io/) |
 | **Orchestration** | [LlamaIndex ≥ 0.10](https://www.llamaindex.ai/) |
-| **LLM** | `qwen/qwen-2.5-72b-instruct` via [OpenRouter](https://openrouter.ai/) |
-| **Embeddings** | `qwen/qwen3-embedding-8b` via OpenRouter |
+| **LLM** | `models/gemini-1.5-flash` via [Google Gemini API](https://ai.google.dev/) |
+| **Embeddings** | `models/text-embedding-004` via Google Gemini API |
 | **Vector DB** | [Chroma DB](https://docs.trychroma.com/) (local, file-based) |
 | **PDF Parser** | `pypdf` |
 | **DOCX Parser** | `python-docx` |
@@ -68,11 +70,11 @@ resume-rag-team3/
 │   └── ...
 │
 ├── src/
-│   ├── config.py            # Config loader (.env + paths)
+│   ├── config.py            # Config loader (.env + paths, Gemini defaults)
 │   ├── parser.py            # PDF/DOCX parser + name extractor
-│   ├── indexer.py           # Build/refresh Chroma DB index
+│   ├── indexer.py           # Build/refresh Chroma DB index (Gemini Embeddings)
 │   ├── matcher.py           # Fuzzy name matching
-│   ├── classifier.py        # LLM query classifier
+│   ├── classifier.py        # Gemini LLM query classifier (+ fallback)
 │   └── retriever.py         # Filtered LlamaIndex query engine
 │
 └── tests/
@@ -87,7 +89,7 @@ resume-rag-team3/
 ### Prerequisites
 
 - Python 3.10+
-- An [OpenRouter](https://openrouter.ai/) account with an API key
+- A **Google Gemini API key** — get one free at [https://aistudio.google.com/app/apikey](https://aistudio.google.com/app/apikey)
 
 ### 1 — Clone the repository
 
@@ -102,22 +104,20 @@ cd Resume-RAG-LLM
 pip install -r requirements.txt
 ```
 
-### 3 — Configure environment
+### 3 — Configure environment (optional)
 
-Copy the template and add your API key:
-
-```bash
-cp .env.template .env
-```
-
-Edit `.env`:
+You can set your API key in `.env` **or** paste it directly in the sidebar of the Streamlit app at runtime.
 
 ```dotenv
-OPENROUTER_API_KEY=sk-or-xxxxxxxxxxxxxxxxxxxxxxxx
-# Optional overrides:
-# LLM_MODEL=qwen/qwen-2.5-72b-instruct
-# EMBEDDING_MODEL=qwen/qwen3-embedding-8b
+# .env
+GEMINI_API_KEY=AIzaSy_your_key_here
+
+# Optional model overrides:
+# LLM_MODEL=models/gemini-1.5-pro
+# EMBEDDING_MODEL=models/text-embedding-004
 ```
+
+> **Tip:** If you leave `.env` empty, you can still use the app by pasting your key in the **🔑 Gemini API Key** field in the sidebar.
 
 ### 4 — Add resumes
 
@@ -137,13 +137,15 @@ Yasaswi_Profile - yasaswi kotha.docx
 
 ### 5 — Build the vector index
 
-Run the indexer **once** (or whenever resumes change):
+Run the indexer **once** (or whenever resumes change). This requires your Gemini API key to be set (via `.env` or `--api-key` flag):
 
 ```bash
 python src/indexer.py
+# or force a full rebuild:
+python src/indexer.py --rebuild
 ```
 
-This will parse all resumes, generate embeddings via OpenRouter, and store them in `chroma_db/`.
+This parses all resumes, generates embeddings via the Gemini Embedding API, and stores them in `chroma_db/`.
 
 ### 6 — Launch the Streamlit app
 
@@ -152,6 +154,8 @@ streamlit run app.py
 ```
 
 Open [http://localhost:8501](http://localhost:8501) in your browser.
+
+Paste your **Gemini API key** in the **🔑 Gemini API Key** field in the left sidebar to enable live LLM responses.
 
 ---
 
@@ -234,10 +238,10 @@ All branches merge into `main` sequentially.
 
 | Problem | Solution |
 |---|---|
-| `OPENROUTER_API_KEY is not set` | Create `.env` and add your key |
+| `GEMINI_API_KEY is not set` | Add key to `.env` or paste it in the sidebar 🔑 |
 | `Resumes directory does not exist` | Create `Resumes/` and add files |
 | `Chroma DB not found / empty` | Run `python src/indexer.py` first |
-| `Mock Mode` responses | API key missing/invalid — add valid key to `.env` |
+| `Mock Mode` responses | API key missing/invalid — add valid key to `.env` or sidebar |
 | Import errors | Run `pip install -r requirements.txt` |
 
 ---

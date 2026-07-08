@@ -1,0 +1,68 @@
+{
+  "timestamp": "2026-07-08 17:20:45",
+  "summary": {
+    "average_faithfulness": 0.925,
+    "average_answer_relevancy": 0.725,
+    "average_context_precision": 0.6875,
+    "average_context_recall": 0.0625,
+    "average_answer_correctness": 0.0
+  },
+  "results": [
+    {
+      "query": "Summarize Trinadh's resume",
+      "candidate": "Trinadh Kumar Reddi",
+      "response": "Here is a summary of Trinadh Kumar Reddi's resume:\n\n**Education:**\n- B.Tech in Artificial Intelligence and Machine Learning (CGPA: 7.86) from Bonam Venkata Chalamayya Engineering College (2021-2025)\n- Intermediate (MPC) from Sri Chaitanya Jr College (2019-2021)\n- Class X from G R Mariappan Sir C V Raman (EM) P S (2018-2019)\n\n**Skills:**\n- Programming Languages: Python, SQL\n- Data Analysis & Visualization: Pandas, NumPy, Matplotlib, Plotly, Power BI\n- Web Scraping & Data Collection: BeautifulSoup, Requests, Regular Expressions (Regex)\n- Machine Learning: Scikit-learn, Deep Learning Basics, NLP, RAG, LangGraph\n- Databases: MySQL, RDBMS, SQL Queries, Joins\n- Tools: Jupyter Notebook, MySQL, VS Code, Git & GitHub, Streamlit, Power BI, MS Excel\n- Soft Skills: Teamwork, Critical Thinking, Communication, Problem Solving\n\n**Experience:**\n- Internship project at Innomatics Research Labs (built a production-style Retrieval-Augmented Generation system)\n\n**Projects:**\n- RAG Customer Support Assistant (LangGraph, ChromaDB & Streamlit)\n- Risk-Return Evaluation of Indian Mutual Funds (Web Scraping & Data Analysis)\n- Brain Stroke Prediction (Exploratory Data Analysis)\n- Bank Account Simulation System\n- Handwritten Character Recognition\n\n**Certifications:**\n- Microsoft Certified: Azure AI Fundamentals (June 19, 2024)\n- Machine Learning with Python (ML0101EN) from Cognitive Class (IBM) (February 12, 2024)\n- Python from GUVI (August 6, 2023)\n\n**Technologies:**\n- LangGraph\n- ChromaDB\n- Streamlit\n- Python\n- SQL\n- MySQL\n- RDBMS\n- Jupyter Notebook\n- VS Code\n- Git & GitHub\n- Power BI\n- MS Excel",
+      "ground_truth": "Trinadh Kumar Reddi is a Software Engineer with experience in MuleSoft development, Java, Salesforce, and Cloud platforms (AWS, Azure). He holds multiple certifications like AWS Cloud Practitioner, Java SE 8 Programmer, Azure Fundamentals, and MuleSoft Developer.",
+      "latency_ms": 15629.10270690918,
+      "metrics": {
+        "faithfulness": 0.9,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.95,
+        "context_recall": 0.0,
+        "answer_correctness": 0.0
+      }
+    },
+    {
+      "query": "What are Trinadh's certifications?",
+      "candidate": "Trinadh Kumar Reddi",
+      "response": "Trinadh Kumar Reddi's certifications are:\n\n1. Microsoft Certified: Azure AI Fundamentals \u2014 Microsoft, June 19, 2024\n2. Machine Learning with Python (ML0101EN) \u2014 Cognitive Class (IBM), February 12, 2024\n3. Python \u2014 GUVI, August 6, 2023",
+      "ground_truth": "AWS Certified Cloud Practitioner, Microsoft Certified: Azure Fundamentals (AZ-900), Oracle Certified Associate: Java SE 8 Programmer, MuleSoft Certified Developer (Level 1).",
+      "latency_ms": 7304.250240325928,
+      "metrics": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 1.0,
+        "context_precision": 0.0,
+        "context_recall": 0.25,
+        "answer_correctness": 0.0
+      }
+    },
+    {
+      "query": "What is Yasaswi's educational background?",
+      "candidate": "yasaswi kotha",
+      "response": "According to the retrieved resume context, Yasaswi's educational background is:\n\n* Intermediate, Sri Gayatri Junior College (2020-2022), Board: TSBIE, Percentage: 89.2%\n* 10th Grade, Pragathi Central School (2019-2020), Board: CBSE, Percentage: 78%\n\nNote: Yasaswi is also mentioned as a \"Computer Science undergraduate\" in the profile section, but the resume does not provide further details about the undergraduate degree.",
+      "ground_truth": "B.Tech in Computer Science and Engineering from Vardhaman College of Engineering with a CGPA of 8.16.",
+      "latency_ms": 4646.65412902832,
+      "metrics": {
+        "faithfulness": 0.8,
+        "answer_relevancy": 0.9,
+        "context_precision": 0.9,
+        "context_recall": 0.0,
+        "answer_correctness": 0.0
+      }
+    },
+    {
+      "query": "Tell me about Ashok Reddy's experience",
+      "candidate": "M Ashok reddy",
+      "response": "The requested information was not found in the retrieved resume.",
+      "ground_truth": "Worked at Virtusa as Software Development Engineer (April 2024 - Present), Senior Software Engineer (Feb 2022 - March 2024), and at Capgemini as Software Engineer (Nov 2020 - Jan 2022).",
+      "latency_ms": 1687.3226165771484,
+      "metrics": {
+        "faithfulness": 1.0,
+        "answer_relevancy": 0.0,
+        "context_precision": 0.9,
+        "context_recall": 0.0,
+        "answer_correctness": 0.0
+      }
+    }
+  ]
+}

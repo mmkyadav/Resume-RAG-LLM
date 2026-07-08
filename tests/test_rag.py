@@ -22,9 +22,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch, MagicMock
 
-# ── Make src/ importable ───────────────────────────────────────────────────────
-SRC_DIR = Path(__file__).resolve().parent.parent / "src"
-sys.path.insert(0, str(SRC_DIR))
+# ── Make root and src/ importable ───────────────────────────────────────────────────────
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+sys.path.insert(0, str(ROOT_DIR / "src"))
 
 # ── Imports from src/ ──────────────────────────────────────────────────────────
 from parser import extract_candidate_name

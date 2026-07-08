@@ -2,8 +2,10 @@ import unittest
 import sys
 from pathlib import Path
 
-# Add src/ to python path
-sys.path.append(str(Path(__file__).resolve().parent.parent / "src"))
+# Add workspace root and src/ to python path
+ROOT_DIR = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT_DIR))
+sys.path.insert(0, str(ROOT_DIR / "src"))
 
 from matcher import FuzzyNameMatcher
 from classifier import QueryClassifier

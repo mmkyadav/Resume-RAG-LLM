@@ -9,5 +9,5 @@ python-docx
 python-dotenv
 rapidfuzz
 openai
-llama-index-llms-gemini
-llama-index-embeddings-gemini
+llama-index-llms-google-genai
+llama-index-embeddings-google-genai

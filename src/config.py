@@ -13,10 +13,9 @@ CHROMA_DB_PATH = BASE_DIR / "chroma_db"
 # Gemini API Credentials
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 
-# LLM and Embedding Models
-# Default to Google Gemini 1.5 Flash and text-embedding-004
-LLM_MODEL = os.getenv("LLM_MODEL", "models/gemini-1.5-flash")
-EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "models/text-embedding-004")
+# LLM and Embedding Models (new google-genai SDK format — no "models/" prefix)
+LLM_MODEL = os.getenv("LLM_MODEL", "gemini-1.5-flash")
+EMBEDDING_MODEL = os.getenv("EMBEDDING_MODEL", "text-embedding-004")
 
 # Chroma DB Collection Name
 COLLECTION_NAME = "resumes_collection"

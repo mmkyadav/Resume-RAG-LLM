@@ -11,3 +11,4 @@ python-docx
 python-dotenv
 rapidfuzz
 openai
+nest_asyncio

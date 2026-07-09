@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Resume RAG LLM — Project Flowchart Demo</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #0a0e1a;
+    --card: #111827;
+    --card-hover: #1a2236;
+    --border: rgba(255,255,255,0.08);
+    --blue: #3b82f6;
+    --purple: #8b5cf6;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --pink: #ec4899;
+    --cyan: #06b6d4;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'Inter', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  .header {
+    text-align: center;
+    padding: 40px 20px 20px;
+    background: linear-gradient(180deg, rgba(59,130,246,0.08) 0%, transparent 100%);
+  }
+  .header h1 {
+    font-size: 2.4rem;
+    font-weight: 800;
+    background: var(--gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 8px;
+  }
+  .header p { color: var(--muted); font-size: 1rem; }
+
+  .tab-bar {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px;
+    flex-wrap: wrap;
+  }
+  .tab-btn {
+    padding: 10px 22px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    color: var(--muted);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+  }
+  .tab-btn:hover { background: var(--card-hover); color: var(--text); }
+  .tab-btn.active {
+    background: var(--gradient);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+  }
+
+  .tab-content { display: none; padding: 0 20px 40px; max-width: 1200px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* Flow diagrams */
+  .flow-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    padding: 20px 0;
+  }
+
+  .flow-row {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .flow-node {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 18px 24px;
+    min-width: 220px;
+    max-width: 320px;
+    text-align: center;
+    transition: all 0.3s;
+    cursor: default;
+    position: relative;
+  }
+  .flow-node:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+  }
+  .flow-node .icon { font-size: 1.8rem; margin-bottom: 6px; }
+  .flow-node .title { font-weight: 700; font-size: 1rem; margin-bottom: 4px; }
+  .flow-node .subtitle { font-size: 0.78rem; color: var(--muted); line-height: 1.4; }
+  .flow-node .file-tag {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 6px;
+    margin-top: 8px;
+    font-weight: 500;
+  }
+
+  .flow-node.blue { border-color: rgba(59,130,246,0.3); }
+  .flow-node.blue:hover { border-color: var(--blue); }
+  .flow-node.blue .file-tag { background: rgba(59,130,246,0.15); color: var(--blue); }
+
+  .flow-node.purple { border-color: rgba(139,92,246,0.3); }
+  .flow-node.purple:hover { border-color: var(--purple); }
+  .flow-node.purple .file-tag { background: rgba(139,92,246,0.15); color: var(--purple); }
+
+  .flow-node.green { border-color: rgba(16,185,129,0.3); }
+  .flow-node.green:hover { border-color: var(--green); }
+  .flow-node.green .file-tag { background: rgba(16,185,129,0.15); color: var(--green); }
+
+  .flow-node.orange { border-color: rgba(245,158,11,0.3); }
+  .flow-node.orange:hover { border-color: var(--orange); }
+  .flow-node.orange .file-tag { background: rgba(245,158,11,0.15); color: var(--orange); }
+
+  .flow-node.red { border-color: rgba(239,68,68,0.3); }
+  .flow-node.red:hover { border-color: var(--red); }
+  .flow-node.red .file-tag { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  .flow-node.pink { border-color: rgba(236,72,153,0.3); }
+  .flow-node.pink:hover { border-color: var(--pink); }
+  .flow-node.pink .file-tag { background: rgba(236,72,153,0.15); color: var(--pink); }
+
+  .flow-node.cyan { border-color: rgba(6,182,212,0.3); }
+  .flow-node.cyan:hover { border-color: var(--cyan); }
+  .flow-node.cyan .file-tag { background: rgba(6,182,212,0.15); color: var(--cyan); }
+
+  .flow-node.blocked {
+    border-color: rgba(239,68,68,0.4);
+    background: rgba(239,68,68,0.06);
+  }
+
+  .arrow {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    color: var(--muted);
+    font-size: 1.4rem;
+    padding: 6px 0;
+  }
+  .arrow .label {
+    font-size: 0.7rem;
+    background: rgba(255,255,255,0.05);
+    padding: 2px 10px;
+    border-radius: 8px;
+    margin-top: 2px;
+  }
+  .arrow-h {
+    font-size: 1.4rem;
+    color: var(--muted);
+  }
+
+  /* Section headers */
+  .section-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 30px 0 10px;
+    text-align: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  /* Info cards */
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    margin: 20px 0;
+  }
+  .info-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px;
+    transition: all 0.3s;
+  }
+  .info-card:hover {
+    border-color: rgba(59,130,246,0.3);
+    transform: translateY(-2px);
+  }
+  .info-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+  .info-card p, .info-card li { font-size: 0.85rem; color: var(--muted); line-height: 1.6; }
+  .info-card ul { padding-left: 18px; }
+  .info-card code {
+    font-family: 'JetBrains Mono', monospace;
+    background: rgba(59,130,246,0.1);
+    color: var(--blue);
+    padding: 1px 6px;
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+
+  /* Chunk visualization */
+  .chunk-demo {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    margin: 20px 0;
+  }
+  .chunk-box {
+    background: rgba(59,130,246,0.06);
+    border: 1px dashed rgba(59,130,246,0.3);
+    border-radius: 8px;
+    padding: 14px;
+    margin: 8px 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--muted);
+    position: relative;
+  }
+  .chunk-box .chunk-label {
+    position: absolute;
+    top: -10px;
+    left: 12px;
+    background: var(--card);
+    padding: 0 8px;
+    font-size: 0.7rem;
+    color: var(--blue);
+    font-weight: 600;
+  }
+  .chunk-box.active {
+    border-color: var(--green);
+    background: rgba(16,185,129,0.06);
+  }
+  .chunk-box.active .chunk-label { color: var(--green); }
+  .chunk-box.filtered {
+    border-color: var(--red);
+    background: rgba(239,68,68,0.04);
+    opacity: 0.5;
+  }
+  .chunk-box.filtered .chunk-label { color: var(--red); }
+
+  .score-badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-left: 8px;
+  }
+  .score-badge.pass { background: rgba(16,185,129,0.15); color: var(--green); }
+  .score-badge.fail { background: rgba(239,68,68,0.15); color: var(--red); }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 0.85rem;
+  }
+  th {
+    background: rgba(59,130,246,0.1);
+    padding: 12px 16px;
+    text-align: left;
+    font-weight: 600;
+    border-bottom: 1px solid var(--border);
+  }
+  td {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    color: var(--muted);
+  }
+  tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Pipeline step numbers */
+  .step-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--gradient);
+    color: #fff;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .pipeline-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    padding: 14px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    margin: 8px 0;
+    transition: all 0.3s;
+  }
+  .pipeline-step:hover {
+    border-color: rgba(59,130,246,0.3);
+    transform: translateX(4px);
+  }
+  .pipeline-step .step-content h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
+  .pipeline-step .step-content p { font-size: 0.82rem; color: var(--muted); line-height: 1.5; }
+
+  .prompt-box {
+    background: #0d1117;
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 10px;
+    padding: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.8rem;
+    color: var(--cyan);
+    line-height: 1.7;
+    margin: 16px 0;
+    white-space: pre-wrap;
+  }
+
+  @media (max-width: 768px) {
+    .flow-row { flex-direction: column; }
+    .info-grid { grid-template-columns: 1fr; }
+    .header h1 { font-size: 1.6rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>💼 Resume RAG LLM — Project Flowchart</h1>
+  <p>Interactive Architecture & Pipeline Visualization for Demo</p>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" onclick="showTab('arch')">🏗️ Architecture</button>
+  <button class="tab-btn" onclick="showTab('indexing')">📥 Indexing Pipeline</button>
+  <button class="tab-btn" onclick="showTab('query')">🔍 Query Pipeline (10 Steps)</button>
+  <button class="tab-btn" onclick="showTab('chunking')">✂️ Chunking & Retrieval</button>
+  <button class="tab-btn" onclick="showTab('models')">🤖 Models & Tech</button>
+  <button class="tab-btn" onclick="showTab('eval')">📊 Evaluation</button>
+  <button class="tab-btn" onclick="showTab('files')">📁 All Files</button>
+  <button class="tab-btn" onclick="showTab('qa')">❓ Q&A Bank</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 1: ARCHITECTURE -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="tab-arch" class="tab-content active">
+  <div class="section-title">🏗️ High-Level System Architecture</div>
+  <div class="flow-container">
+    <div class="flow-node blue" style="min-width:400px;">
+      <div class="icon">🖥️</div>
+      <div class="title">Streamlit UI Dashboard</div>
+      <div class="subtitle">Chat interface, sidebar health panel, admin console, debug mode</div>
+      <div class="file-tag">app.py (563 lines)</div>
+    </div>
+    <div class="arrow">↓<div class="label">query(str)</div></div>
+    <div class="flow-node purple" style="min-width:400px;">
+      <div class="icon">🎯</div>
+      <div class="title">FilteredQueryEngine — 10-Step RAG Pipeline</div>
+      <div class="subtitle">Orchestrates: classify → match → filter → search → threshold → top-k → context → prompt → LLM → response</div>
+      <div class="file-tag">src/retriever.py (295 lines)</div>
+    </div>
+    <div class="arrow">↓<div class="label">coordinates</div></div>
+    <div class="flow-row">
+      <div class="flow-node orange">
+        <div class="icon">🛡️</div>
+        <div class="title">QueryClassifier</div>
+        <div class="subtitle">Rule-based intent detection. Blocks comparisons, rankings, listings</div>
+        <div class="file-tag">src/classifier.py</div>
+      </div>
+      <div class="flow-node green">
+        <div class="icon">🔤</div>
+        <div class="title">FuzzyNameMatcher</div>
+        <div class="subtitle">rapidfuzz matching + phonetic variants. 80% threshold</div>
+        <div class="file-tag">src/matcher.py</div>
+      </div>
+      <div class="flow-node cyan">
+        <div class="icon">📦</div>
+        <div class="title">Indexer + Parser</div>
+        <div class="subtitle">PDF/DOCX parsing, LlamaIndex Document creation, ChromaDB indexing</div>
+        <div class="file-tag">src/indexer.py + parser.py</div>
+      </div>
+    </div>
+    <div class="arrow">↓<div class="label">uses</div></div>
+    <div class="flow-row">
+      <div class="flow-node pink">
+        <div class="icon">🧠</div>
+        <div class="title">LLM: Llama 3.1 70B</div>
+        <div class="subtitle">via OpenRouter API (OpenAI-compatible)</div>
+        <div class="file-tag">app/llm/openrouter_service.py</div>
+      </div>
+      <div class="flow-node cyan">
+        <div class="icon">📐</div>
+        <div class="title">Embedding: BGE-base-en-v1.5</div>
+        <div class="subtitle">BAAI/bge-base-en-v1.5 — local CPU, 768-dim</div>
+        <div class="file-tag">HuggingFace (sentence-transformers)</div>
+      </div>
+      <div class="flow-node green">
+        <div class="icon">💾</div>
+        <div class="title">Vector DB: ChromaDB</div>
+        <div class="subtitle">Local persistent storage in chroma_db/</div>
+        <div class="file-tag">chromadb.PersistentClient</div>
+      </div>
+    </div>
+    <div class="arrow">↓<div class="label">framework</div></div>
+    <div class="flow-node blue" style="min-width:500px;">
+      <div class="icon">🦙</div>
+      <div class="title">LlamaIndex ≥ 0.10 (Orchestration Framework)</div>
+      <div class="subtitle">Settings, Document, VectorStoreIndex, StorageContext, MetadataFilters, SentenceSplitter, ChromaVectorStore</div>
+      <div class="file-tag">llama-index + llama-index-vector-stores-chroma + llama-index-embeddings-huggingface</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 2: INDEXING PIPELINE -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="tab-indexing" class="tab-content">
+  <div class="section-title">📥 Indexing Pipeline (One-Time Setup)</div>
+  <p style="text-align:center;color:var(--muted);margin-bottom:20px;">Run: <code>python src/indexer.py --rebuild</code></p>
+  <div class="flow-container">
+    <div class="flow-node green">
+      <div class="icon">✅</div>
+      <div class="title">Step 1: Validate Config</div>
+      <div class="subtitle">Check OPENROUTER_API_KEY exists, Resumes/ directory exists</div>
+      <div class="file-tag">config.py → validate_config()</div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="flow-node blue">
+      <div class="icon">⚙️</div>
+      <div class="title">Step 2: Setup LlamaIndex Settings</div>
+      <div class="subtitle">Settings.llm = OpenAI(Llama 3.1 via OpenRouter)<br>Settings.embed_model = HuggingFaceEmbedding(BGE-base)<br>Settings.node_parser = SentenceSplitter(chunk_size=2048, overlap=0)</div>
+      <div class="file-tag">indexer.py → setup_llamaindex_settings()</div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="flow-node purple">
+      <div class="icon">💾</div>
+      <div class="title">Step 3: Connect ChromaDB</div>
+      <div class="subtitle">PersistentClient(path="chroma_db/")<br>Delete old collection → Create fresh "resumes_collection"<br>Wrap with ChromaVectorStore + StorageContext</div>
+      <div class="file-tag">indexer.py lines 74-87</div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="flow-node orange">
+      <div class="icon">📂</div>
+      <div class="title">Step 4: Scan Resume Files</div>
+      <div class="subtitle">Glob Resumes/ for *.pdf and *.docx<br>Found: 29 resume files (28 PDF + 1 DOCX)</div>
+      <div class="file-tag">indexer.py lines 90-93</div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="flow-node cyan">
+      <div class="icon">📝</div>
+      <div class="title">Step 5: Parse Each Resume</div>
+      <div class="subtitle">PDF → pypdf.PdfReader (page-by-page text extraction)<br>DOCX → python-docx (paragraphs + tables)<br>Name from filename: "DESC - Name.pdf" → "Name"</div>
+      <div class="file-tag">parser.py → parse_resume()</div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="flow-node blue">
+      <div class="icon">📄</div>
+      <div class="title">Step 6: Create LlamaIndex Documents</div>
+      <div class="subtitle">Document(text=resume_text, metadata={candidate_name, source_file})<br>excluded_embed_metadata_keys=["source_file"]<br>→ source_file is NOT embedded, only stored as metadata</div>
+      <div class="file-tag">indexer.py lines 105-113</div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="flow-node pink" style="min-width:400px;">
+      <div class="icon">🔮</div>
+      <div class="title">Step 7: VectorStoreIndex.from_documents()</div>
+      <div class="subtitle">LlamaIndex automatically:<br>1. Splits documents → SentenceSplitter(2048 tokens, 0 overlap)<br>2. Generates 768-dim embeddings → BGE-base-en-v1.5<br>3. Stores vectors + metadata → ChromaDB collection</div>
+      <div class="file-tag">indexer.py line 124 ← THE KEY LINE</div>
+    </div>
+    <div class="arrow">↓</div>
+    <div class="flow-node green">
+      <div class="icon">✔️</div>
+      <div class="title">Step 8: Verification</div>
+      <div class="subtitle">Compare ChromaDB vector count vs parsed resume count<br>Log unique candidates, total resumes, collection size<br>PASS if collection_count ≥ resume_count</div>
+      <div class="file-tag">indexer.py lines 131-141</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 3: QUERY PIPELINE -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="tab-query" class="tab-content">
+  <div class="section-title">🔍 Query Pipeline — 10-Step RAG Flow</div>
+  <p style="text-align:center;color:var(--muted);margin-bottom:20px;">Every user query goes through these 10 steps inside <code>FilteredQueryEngine.query()</code></p>
+
+  <div class="pipeline-step">
+    <div class="step-num">1</div>
+    <div class="step-content">
+      <h4>🛡️ Intent Detection (classifier.py)</h4>
+      <p>Rule-based keyword scan. Checks for 20+ trigger words: "compare", "rank", "list", "best", "vs", "both", "all", "recommend", etc. If found → <strong style="color:#ef4444;">BLOCKED immediately</strong>. No LLM call needed — runs in microseconds.</p>
+    </div>
+  </div>
+
+  <div class="pipeline-step">
+    <div class="step-num">2</div>
+    <div class="step-content">
+      <h4>🔤 Candidate Name Extraction (matcher.py)</h4>
+      <p>Tokenize query → remove 130+ stop words → create sliding windows (1-word + 2-word) → fuzzy match each window against all candidate name terms using <code>rapidfuzz.fuzz.ratio()</code> with 80% threshold. Handles: "pawan"→"pavanteja", "yasasvi"→"yasaswi", "trinad"→"trinadh". Returns 0 matches → BLOCKED. 2+ matches → BLOCKED. 1 match → proceed.</p>
+    </div>
+  </div>
+
+  <div class="pipeline-step">
+    <div class="step-num">3</div>
+    <div class="step-content">
+      <h4>🔒 Metadata Filter Creation</h4>
+      <p>Creates <code>MetadataFilter(key="candidate_name", value="pavanteja kamma")</code>. This scopes the upcoming vector search to ONLY this candidate's resume chunks. Without this, the search could return chunks from any resume.</p>
+    </div>
+  </div>
+
+  <div class="pipeline-step">
+    <div class="step-num">4</div>
+    <div class="step-content">
+      <h4>🔍 Vector Similarity Search (LlamaIndex + ChromaDB)</h4>
+      <p><code>index.as_retriever(filters=filters, similarity_top_k=6)</code> → <code>retriever.retrieve(query_str)</code>. Embeds the user query using BGE-base → searches ChromaDB for the 6 nearest vectors (filtered by candidate_name metadata) → returns chunks with similarity scores.</p>
+    </div>
+  </div>
+
+  <div class="pipeline-step">
+    <div class="step-num">5</div>
+    <div class="step-content">
+      <h4>📏 Similarity Threshold Filtering</h4>
+      <p>Discard any chunk with similarity score &lt; <strong>0.4</strong>. This removes irrelevant chunks that passed metadata filtering but are semantically unrelated to the question. If ALL chunks are below 0.4 → return "information not found".</p>
+    </div>
+  </div>
+
+  <div class="pipeline-step">
+    <div class="step-num">6</div>
+    <div class="step-content">
+      <h4>🎯 Top-K Selection</h4>
+      <p>Keep only the top <strong>3</strong> chunks after threshold filtering. This limits the context size sent to the LLM, controlling costs and preventing context window overflow.</p>
+    </div>
+  </div>
+
+  <div class="pipeline-step">
+    <div class="step-num">7</div>
+    <div class="step-content">
+      <h4>📋 Context Builder</h4>
+      <p>Joins the top-K chunk texts with <code>"\n\n=== Context Chunk ===\n"</code> separators to create the final context string.</p>
+    </div>
+  </div>
+
+  <div class="pipeline-step">
+    <div class="step-num">8</div>
+    <div class="step-content">
+      <h4>📝 Prompt Builder (THE SYSTEM PROMPT)</h4>
+      <p>Constructs two messages:<br>
+      <strong>System:</strong> "You are an expert Technical Recruiter. Answer ONLY from retrieved context. Never hallucinate..."<br>
+      <strong>User:</strong> "Retrieved Resume Context for candidate '{name}': {context}\n\nQuestion: {query}\nAnswer:"</p>
+    </div>
+  </div>
+
+  <div class="pipeline-step">
+    <div class="step-num">9</div>
+    <div class="step-content">
+      <h4>🌐 OpenRouter API Call (Exactly Once)</h4>
+      <p>Sends [system_msg, user_msg] to <code>meta-llama/llama-3.1-70b-instruct</code> via OpenRouter (openrouter.ai/api/v1) using OpenAI SDK. Temperature=0.1. Exponential backoff: 3 retries (1s, 2s, 4s). Singleton client reused across queries.</p>
+    </div>
+  </div>
+
+  <div class="pipeline-step">
+    <div class="step-num">10</div>
+    <div class="step-content">
+      <h4>📤 Return Response to UI</h4>
+      <p>Packages: response text, candidate_name, spelling_suggestion, is_blocked, blocked_reason, debug_info (timings, scores, prompt, raw LLM response). Displayed in Streamlit chat with candidate badge, alerts, and optional debug panel.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 4: CHUNKING & RETRIEVAL -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="tab-chunking" class="tab-content">
+  <div class="section-title">✂️ Chunking Strategy</div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>📐 Chunking Method</h3>
+      <p><strong>LlamaIndex SentenceSplitter</strong></p>
+      <ul>
+        <li><code>chunk_size = 2048</code> tokens</li>
+        <li><code>chunk_overlap = 0</code> tokens</li>
+        <li>Splits on sentence boundaries (not mid-word)</li>
+        <li>Defined in <code>indexer.py line 59</code></li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🤔 Why These Values?</h3>
+      <ul>
+        <li><strong>2048 tokens</strong> — resumes are 1-2 pages (~500-1500 tokens). Most fit in a single chunk, preserving full context</li>
+        <li><strong>0 overlap</strong> — since resumes fit in 1-2 chunks, overlap would just duplicate content unnecessarily</li>
+        <li><strong>SentenceSplitter</strong> — ensures chunks break at sentence boundaries, not mid-word or mid-phrase</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="chunk-demo">
+    <h3 style="margin-bottom:14px;">📄 Example: How a Resume Gets Chunked</h3>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">Resume: "ASHOK_Reddy_RESUME - M Ashok reddy.pdf" (~1200 tokens)</p>
+    <div class="chunk-box active">
+      <div class="chunk-label">Chunk 1 (1200 tokens) — fits in one chunk ✅</div>
+      M Ashok reddy | Software Development Engineer | Virtusa<br>
+      Education: B.Tech in Computer Science...<br>
+      Skills: Python, Java, Spring Boot, React, AWS, Docker...<br>
+      Experience: Virtusa (Apr 2024-Present), Capgemini (Nov 2020-Jan 2022)...<br>
+      Projects: RAG System, Microservices Platform...<br>
+      Certifications: AWS Solutions Architect...
+    </div>
+    <p style="font-size:0.8rem;color:var(--muted);margin-top:12px;">↑ Since the resume is ~1200 tokens and chunk_size is 2048, the entire resume fits in <strong>one chunk</strong>. No information is split across chunks.</p>
+  </div>
+
+  <div class="section-title" style="margin-top:40px;">🔍 Retrieval Technique</div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>📊 Retrieval Method: Dense Vector Similarity Search</h3>
+      <ul>
+        <li><strong>Type:</strong> Dense retrieval (not sparse/BM25)</li>
+        <li><strong>Algorithm:</strong> Cosine similarity via ChromaDB's built-in HNSW index</li>
+        <li><strong>Embedding:</strong> BAAI/bge-base-en-v1.5 (768-dim dense vectors)</li>
+        <li><strong>Pre-filter:</strong> Metadata filter on <code>candidate_name</code></li>
+        <li><strong>Initial fetch:</strong> top-6 (similarity_top_k = top_k × 2)</li>
+        <li><strong>Post-filter:</strong> Similarity threshold ≥ 0.4</li>
+        <li><strong>Final selection:</strong> Top-3 chunks</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>🔄 Retrieval Flow</h3>
+      <ul>
+        <li><strong>1.</strong> User query is embedded using BGE-base → 768-dim vector</li>
+        <li><strong>2.</strong> ChromaDB filters collection by <code>candidate_name</code> metadata</li>
+        <li><strong>3.</strong> Within filtered subset, finds 6 nearest vectors (cosine similarity)</li>
+        <li><strong>4.</strong> Chunks with score &lt; 0.4 are discarded</li>
+        <li><strong>5.</strong> Top 3 remaining chunks become the context</li>
+        <li><strong>6.</strong> Context is sent to LLM with system prompt</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="chunk-demo">
+    <h3 style="margin-bottom:14px;">🎯 Example: Retrieval in Action</h3>
+    <p style="font-size:0.85rem;color:var(--muted);margin-bottom:14px;">Query: "What are Ashok's Python skills?" → Candidate: "M Ashok reddy"</p>
+    <div class="chunk-box active">
+      <div class="chunk-label">Chunk 1 — Score: 0.87 ✅ SELECTED (top-3)</div>
+      Skills: Python, Java, Spring Boot, React, Node.js, AWS, Docker, Kubernetes...
+    </div>
+    <div class="chunk-box active">
+      <div class="chunk-label">Chunk 2 — Score: 0.72 ✅ SELECTED (top-3)</div>
+      Experience: Built Python-based microservices at Virtusa, deployed on AWS Lambda...
+    </div>
+    <div class="chunk-box active">
+      <div class="chunk-label">Chunk 3 — Score: 0.55 ✅ SELECTED (top-3)</div>
+      Projects: RAG System using Python + LlamaIndex + ChromaDB...
+    </div>
+    <div class="chunk-box filtered">
+      <div class="chunk-label">Chunk 4 — Score: 0.31 ❌ FILTERED (below 0.4 threshold)</div>
+      Education: B.Tech in Computer Science, graduated 2020...
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 5: MODELS & TECH -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="tab-models" class="tab-content">
+  <div class="section-title">🤖 Models, Libraries & Technologies</div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>🧠 LLM — Meta Llama 3.1 70B Instruct</h3>
+      <ul>
+        <li><strong>Model:</strong> <code>meta-llama/llama-3.1-70b-instruct</code></li>
+        <li><strong>Parameters:</strong> 70 billion</li>
+        <li><strong>Provider:</strong> Meta (open-source), accessed via OpenRouter</li>
+        <li><strong>API:</strong> OpenRouter (openrouter.ai/api/v1) — OpenAI-compatible</li>
+        <li><strong>Temperature:</strong> 0.1 (low = deterministic, factual)</li>
+        <li><strong>Purpose:</strong> Generate answers from retrieved resume context</li>
+        <li><strong>Why this model:</strong> 70B parameters gives high quality; instruct-tuned for following instructions; accessible via affordable pay-per-token API</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>📐 Embedding — BAAI/bge-base-en-v1.5</h3>
+      <ul>
+        <li><strong>Model:</strong> <code>BAAI/bge-base-en-v1.5</code></li>
+        <li><strong>Provider:</strong> Beijing Academy of AI (BAAI)</li>
+        <li><strong>Type:</strong> Dense text embedding (bi-encoder)</li>
+        <li><strong>Dimensions:</strong> 768</li>
+        <li><strong>Max Tokens:</strong> 512</li>
+        <li><strong>Execution:</strong> LOCAL on CPU (no API needed)</li>
+        <li><strong>Library:</strong> sentence-transformers via llama-index-embeddings-huggingface</li>
+        <li><strong>Why:</strong> Top-ranked on MTEB benchmark; free; runs locally; fast inference</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="section-title">📚 Full Technology Stack</div>
+  <table>
+    <thead>
+      <tr><th>Category</th><th>Technology</th><th>Version</th><th>Purpose</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>🦙 Orchestration</td><td>LlamaIndex</td><td>≥ 0.14</td><td>RAG framework: documents, indexing, retrieval, settings</td></tr>
+      <tr><td>💾 Vector DB</td><td>ChromaDB</td><td>1.5.9</td><td>Local persistent vector storage with HNSW index</td></tr>
+      <tr><td>🧠 LLM</td><td>Llama 3.1 70B</td><td>—</td><td>Answer generation from context</td></tr>
+      <tr><td>📐 Embeddings</td><td>BGE-base-en-v1.5</td><td>—</td><td>Convert text to 768-dim vectors</td></tr>
+      <tr><td>🌐 LLM API</td><td>OpenRouter</td><td>—</td><td>OpenAI-compatible API gateway for LLM access</td></tr>
+      <tr><td>🖥️ Frontend</td><td>Streamlit</td><td>1.59</td><td>Web dashboard UI</td></tr>
+      <tr><td>🔤 Fuzzy Match</td><td>RapidFuzz</td><td>3.14</td><td>Spelling-tolerant name matching (C++ optimized)</td></tr>
+      <tr><td>📄 PDF Parser</td><td>pypdf</td><td>6.14</td><td>Extract text from PDF files</td></tr>
+      <tr><td>📄 DOCX Parser</td><td>python-docx</td><td>1.2</td><td>Extract text from DOCX files</td></tr>
+      <tr><td>🔑 Env Config</td><td>python-dotenv</td><td>1.2</td><td>Load .env file variables</td></tr>
+      <tr><td>🌐 HTTP Client</td><td>OpenAI SDK</td><td>2.44</td><td>API calls to OpenRouter</td></tr>
+      <tr><td>🧪 Testing</td><td>unittest + pytest</td><td>—</td><td>40+ test cases across 5 classes</td></tr>
+      <tr><td>🔗 Async</td><td>nest-asyncio</td><td>1.6</td><td>Enable nested event loops for Streamlit</td></tr>
+      <tr><td>🤗 Transformers</td><td>sentence-transformers</td><td>5.6</td><td>Load and run HuggingFace embedding models</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 6: EVALUATION -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="tab-eval" class="tab-content">
+  <div class="section-title">📊 RAG Evaluation System (LLM-as-a-Judge)</div>
+
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>📋 Evaluation Method</h3>
+      <p><strong>LLM-as-a-Judge</strong> (inspired by RAGAS framework)</p>
+      <ul>
+        <li>Uses the same LLM (Llama 3.1 70B) to score pipeline outputs</li>
+        <li>Judge system prompt: "You are a precise, objective academic evaluator"</li>
+        <li>Each metric returns a JSON object: <code>{"score": 0.0-1.0, "reason": "..."}</code></li>
+        <li>4 predefined test cases with ground-truth answers</li>
+        <li>Generates JSON + Markdown reports</li>
+      </ul>
+    </div>
+    <div class="info-card">
+      <h3>📊 5 Evaluation Metrics</h3>
+      <table style="margin:0;">
+        <tr><td><strong>Faithfulness</strong></td><td>Is the answer grounded ONLY in the context? (detects hallucination)</td></tr>
+        <tr><td><strong>Answer Relevancy</strong></td><td>Does the answer directly address the user's question?</td></tr>
+        <tr><td><strong>Context Precision</strong></td><td>Are the retrieved chunks relevant to the query?</td></tr>
+        <tr><td><strong>Context Recall</strong></td><td>Does the context cover all facts in ground truth?</td></tr>
+        <tr><td><strong>Answer Correctness</strong></td><td>Is the answer factually correct vs ground truth?</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="info-card" style="margin-top:16px;">
+    <h3>🧪 Test Cases (evaluator.py)</h3>
+    <table>
+      <thead><tr><th>Query</th><th>Expected Candidate</th><th>Ground Truth (summary)</th></tr></thead>
+      <tbody>
+        <tr><td>"Summarize Trinadh's resume"</td><td>Trinadh Kumar Reddi</td><td>MuleSoft dev, Java, AWS, Azure certs</td></tr>
+        <tr><td>"What are Trinadh's certifications?"</td><td>Trinadh Kumar Reddi</td><td>AWS Cloud Practitioner, Azure AZ-900, Java SE 8, MuleSoft Level 1</td></tr>
+        <tr><td>"What is Yasaswi's educational background?"</td><td>yasaswi kotha</td><td>B.Tech CSE, Vardhaman College, CGPA 8.16</td></tr>
+        <tr><td>"Tell me about Ashok Reddy's experience"</td><td>M Ashok reddy</td><td>Virtusa SDE (2024+), Sr SE (2022-24), Capgemini SE (2020-22)</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 7: ALL FILES -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="tab-files" class="tab-content">
+  <div class="section-title">📁 Complete File Map — Every Script Explained</div>
+  <table>
+    <thead><tr><th>File</th><th>Owner</th><th>Lines</th><th>Purpose</th><th>Key Functions/Classes</th></tr></thead>
+    <tbody>
+      <tr><td><code>app.py</code></td><td>Person 3</td><td>563</td><td>Streamlit UI dashboard — chat, sidebar, debug, CSS</td><td>main(), render_sidebar(), submit_query(), init_session_state()</td></tr>
+      <tr><td><code>src/config.py</code></td><td>Person 1</td><td>36</td><td>Central config — env vars, paths, model names</td><td>OPENROUTER_API_KEY, LLM_MODEL, EMBEDDING_MODEL, validate_config()</td></tr>
+      <tr><td><code>src/parser.py</code></td><td>Person 1</td><td>72</td><td>PDF/DOCX text extraction + name extraction</td><td>parse_resume(), parse_pdf(), parse_docx(), extract_candidate_name()</td></tr>
+      <tr><td><code>src/indexer.py</code></td><td>Person 1</td><td>155</td><td>Build/refresh ChromaDB vector index</td><td>setup_llamaindex_settings(), build_or_refresh_index()</td></tr>
+      <tr><td><code>src/matcher.py</code></td><td>Person 2</td><td>233</td><td>Fuzzy name matching with rapidfuzz</td><td>FuzzyNameMatcher, match_query(), _build_candidate_terms()</td></tr>
+      <tr><td><code>src/classifier.py</code></td><td>Person 2</td><td>72</td><td>Rule-based query intent classification</td><td>QueryClassifier, classify()</td></tr>
+      <tr><td><code>src/retriever.py</code></td><td>Person 2</td><td>295</td><td>10-step RAG pipeline orchestration</td><td>FilteredQueryEngine, query() — contains THE system prompt</td></tr>
+      <tr><td><code>src/evaluator.py</code></td><td>Person 3</td><td>299</td><td>RAG quality evaluation (LLM-as-Judge)</td><td>RAGEvaluator, run_evaluation(), 5 metric methods</td></tr>
+      <tr><td><code>app/llm/openrouter_service.py</code></td><td>Person 2</td><td>106</td><td>OpenRouter API client (singleton + retries)</td><td>OpenRouterClient, get_completion()</td></tr>
+      <tr><td><code>tests/test_rag.py</code></td><td>Person 3</td><td>575</td><td>End-to-end test suite (5 classes, 40+ tests)</td><td>TestCandidateNameExtraction, TestFuzzyNameMatcher, TestQueryClassifier, TestFilteredQueryEngine, TestAppSessionStateLogic</td></tr>
+      <tr><td><code>tests/test_retrieval.py</code></td><td>Person 2</td><td>73</td><td>Retrieval pipeline integration tests</td><td>TestRetrievalPipeline</td></tr>
+      <tr><td><code>.env</code></td><td>—</td><td>1</td><td>API key storage</td><td>OPENROUTER_API_KEY=sk-or-v1-...</td></tr>
+      <tr><td><code>requirements.txt</code></td><td>—</td><td>14</td><td>Python dependencies</td><td>13 packages listed</td></tr>
+      <tr><td><code>Resumes/</code></td><td>—</td><td>29 files</td><td>PDF/DOCX resume files</td><td>28 PDFs + 1 DOCX</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 8: Q&A BANK -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<div id="tab-qa" class="tab-content">
+  <div class="section-title">❓ Every Possible Question & Answer</div>
+
+  <h3 style="margin:20px 0 10px;color:var(--blue);">📌 General / Architecture Questions</h3>
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>What is RAG?</h3>
+      <p>Retrieval-Augmented Generation. Instead of relying on the LLM's training data, we <strong>retrieve</strong> relevant documents first, then <strong>augment</strong> the prompt with that context, and then <strong>generate</strong> an answer. This ensures the LLM answers from actual data, not hallucinated knowledge.</p>
+    </div>
+    <div class="info-card">
+      <h3>What problem does this project solve?</h3>
+      <p>Recruiters need to quickly find information about candidates from their resumes. Instead of manually reading 29+ resumes, they can ask natural language questions like "What are Ashok's Python skills?" and get instant, accurate answers grounded in the actual resume.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why not just use ChatGPT directly?</h3>
+      <p>ChatGPT doesn't have access to your private resumes. Even if you upload them, it might hallucinate or mix up candidates. Our RAG system <strong>retrieves specific resume chunks</strong> and uses a system prompt that forces the LLM to answer ONLY from those chunks — preventing hallucination.</p>
+    </div>
+    <div class="info-card">
+      <h3>What is LlamaIndex and why use it?</h3>
+      <p>LlamaIndex is a Python framework that simplifies building RAG systems. It handles: document loading, text chunking, embedding generation, vector store integration, metadata filtering, and retrieval. Without it, we'd have to manually implement all these components.</p>
+    </div>
+    <div class="info-card">
+      <h3>What is the overall flow?</h3>
+      <p>Two phases: <strong>Indexing</strong> (one-time: parse resumes → chunk → embed → store in ChromaDB) and <strong>Querying</strong> (per question: classify → match name → filter → search → threshold → top-K → build prompt → LLM call → display).</p>
+    </div>
+    <div class="info-card">
+      <h3>How many files/modules are there?</h3>
+      <p>11 code files: app.py, config.py, parser.py, indexer.py, matcher.py, classifier.py, retriever.py, evaluator.py, openrouter_service.py, test_rag.py, test_retrieval.py. Plus .env, requirements.txt, and 29 resume files.</p>
+    </div>
+  </div>
+
+  <h3 style="margin:30px 0 10px;color:var(--green);">🧮 Embedding & Vector Questions</h3>
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>What embedding model is used?</h3>
+      <p><code>BAAI/bge-base-en-v1.5</code> — a 768-dimensional dense embedding model from Beijing Academy of AI. It runs <strong>locally on CPU</strong> via HuggingFace's sentence-transformers library. No API key or cost needed.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why BGE instead of OpenAI embeddings?</h3>
+      <p>1. <strong>Free</strong> — no per-token cost. 2. <strong>Privacy</strong> — resume data stays local. 3. <strong>Fast</strong> — no network latency. 4. <strong>Quality</strong> — BGE ranks among the top models on the MTEB benchmark for retrieval tasks.</p>
+    </div>
+    <div class="info-card">
+      <h3>What is a vector embedding?</h3>
+      <p>A vector embedding converts text into a numerical array (768 numbers). Similar texts produce similar vectors. This allows us to find relevant resume chunks by measuring the mathematical distance between the query vector and stored vectors.</p>
+    </div>
+    <div class="info-card">
+      <h3>What similarity metric is used?</h3>
+      <p>Cosine similarity — measures the angle between two vectors. Score ranges from 0 (completely different) to 1 (identical meaning). ChromaDB uses HNSW (Hierarchical Navigable Small World) algorithm for efficient nearest-neighbor search.</p>
+    </div>
+    <div class="info-card">
+      <h3>What is ChromaDB?</h3>
+      <p>An open-source vector database. We use <code>PersistentClient</code> which stores data to disk at <code>chroma_db/</code>. It indexes vectors using HNSW for fast approximate nearest neighbor search. It also supports metadata filtering.</p>
+    </div>
+    <div class="info-card">
+      <h3>What is HNSW?</h3>
+      <p>Hierarchical Navigable Small World — an algorithm for approximate nearest neighbor search. It builds a multi-layer graph of vectors for fast similarity search. Much faster than brute-force comparison, with minimal accuracy loss.</p>
+    </div>
+  </div>
+
+  <h3 style="margin:30px 0 10px;color:var(--orange);">✂️ Chunking Questions</h3>
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>What chunking strategy is used?</h3>
+      <p><strong>SentenceSplitter</strong> from LlamaIndex with <code>chunk_size=2048</code> tokens and <code>chunk_overlap=0</code>. It splits text at sentence boundaries, ensuring chunks don't break mid-sentence.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why 2048 chunk size?</h3>
+      <p>Resumes are short documents (typically 500-1500 tokens for 1-2 pages). A 2048-token chunk means most resumes fit in a <strong>single chunk</strong>, preserving full context without fragmentation.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why zero overlap?</h3>
+      <p>Since most resumes fit in 1-2 chunks, overlap would just duplicate content. Overlap is useful for long documents where important information might span chunk boundaries — but that's rare with resumes.</p>
+    </div>
+    <div class="info-card">
+      <h3>What is SentenceSplitter vs TokenSplitter?</h3>
+      <p><strong>SentenceSplitter</strong> breaks at sentence boundaries (periods, newlines). <strong>TokenSplitter</strong> breaks at exact token count, potentially cutting mid-sentence. We use SentenceSplitter for cleaner, more coherent chunks.</p>
+    </div>
+    <div class="info-card">
+      <h3>How many chunks per resume?</h3>
+      <p>Most resumes produce <strong>1 chunk</strong> (since they're under 2048 tokens). Longer resumes may produce 2 chunks. The total ChromaDB collection contains roughly 29-40 vectors for 29 resumes.</p>
+    </div>
+    <div class="info-card">
+      <h3>What metadata is stored with each chunk?</h3>
+      <p>Two fields: <code>candidate_name</code> (used for filtering) and <code>source_file</code> (original filename). <code>source_file</code> is excluded from embedding (<code>excluded_embed_metadata_keys</code>) so it doesn't affect similarity search.</p>
+    </div>
+  </div>
+
+  <h3 style="margin:30px 0 10px;color:var(--purple);">🔍 Retrieval Questions</h3>
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>What retrieval technique is used?</h3>
+      <p><strong>Metadata-filtered dense vector retrieval</strong>. First, we filter by candidate_name metadata (so we only search one person's resume). Then, we do cosine similarity search within that filtered subset. This is more precise than searching all resumes.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why metadata filtering before vector search?</h3>
+      <p>Without filtering, the search might return chunks from wrong candidates. For example, if Ashok and Pawan both mention "Python", a query about "Ashok's Python skills" might return Pawan's chunks too. Metadata filtering prevents this.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why similarity threshold of 0.4?</h3>
+      <p>0.4 is a conservative threshold. Chunks with scores below 0.4 are too semantically dissimilar to the query and would add noise to the context. Empirically, relevant resume chunks score 0.5-0.9 for well-formed queries.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why top-K = 3?</h3>
+      <p>Since most resumes produce 1-2 chunks, top-3 captures all relevant chunks. More than 3 would include irrelevant chunks. Fewer than 3 might miss important context for multi-chunk resumes.</p>
+    </div>
+    <div class="info-card">
+      <h3>What is the difference between top_k × 2 and top_k?</h3>
+      <p>We initially fetch <code>top_k × 2 = 6</code> chunks, then apply the 0.4 threshold filter, then keep only top 3. This two-stage approach ensures we have enough candidates to filter from, in case some chunks score below the threshold.</p>
+    </div>
+    <div class="info-card">
+      <h3>Is this sparse or dense retrieval?</h3>
+      <p><strong>Dense retrieval</strong>. Sparse retrieval (BM25/TF-IDF) matches exact keywords. Dense retrieval uses semantic embeddings that understand meaning — "Python developer" and "Python programmer" match even without identical words.</p>
+    </div>
+  </div>
+
+  <h3 style="margin:30px 0 10px;color:var(--pink);">🧠 LLM & Prompt Questions</h3>
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>What LLM is used and why?</h3>
+      <p><code>meta-llama/llama-3.1-70b-instruct</code> — Meta's 70-billion parameter model, instruction-tuned. We access it via OpenRouter API. Why: high quality, instruction-following capability, affordable via pay-per-token, and open-source.</p>
+    </div>
+    <div class="info-card">
+      <h3>What is OpenRouter?</h3>
+      <p>OpenRouter is an API gateway that provides access to 100+ LLMs through a unified OpenAI-compatible API. We use it instead of running the 70B model locally (which requires expensive GPUs). It works with the standard OpenAI Python SDK.</p>
+    </div>
+    <div class="info-card">
+      <h3>Where is the system prompt?</h3>
+      <p>In <code>src/retriever.py</code>, lines 229-242. It says: "You are an expert Technical Recruiter. Answer ONLY from the retrieved resume context. Never hallucinate. Never invent information." This prevents the LLM from making up information.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why temperature = 0.1?</h3>
+      <p>Low temperature makes the LLM more deterministic and factual. For a recruiter tool, we want consistent, accurate answers — not creative or varied responses. Higher temperature would introduce randomness and potential inaccuracies.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why exactly one LLM call per query?</h3>
+      <p>Each LLM call costs money and adds latency (~1-3 seconds). All filtering (intent detection, name matching, metadata filtering, threshold filtering) is done <strong>locally</strong> before making the single API call. This minimizes cost and latency.</p>
+    </div>
+    <div class="info-card">
+      <h3>What prevents hallucination?</h3>
+      <p>Three layers: (1) System prompt explicitly says "Never hallucinate. Answer ONLY from context." (2) We only provide the specific candidate's resume chunks as context. (3) If no relevant chunks are found, we return a static message without calling the LLM.</p>
+    </div>
+  </div>
+
+  <h3 style="margin:30px 0 10px;color:var(--cyan);">🔤 Name Matching & Classification Questions</h3>
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>How does fuzzy name matching work?</h3>
+      <p>Uses <code>rapidfuzz.fuzz.ratio()</code> — a Levenshtein-distance-based similarity score (0-100). Query tokens are compared against candidate name terms. If score ≥ 80 → match. Example: fuzz.ratio("pawan", "pavan") ≈ 90 → match!</p>
+    </div>
+    <div class="info-card">
+      <h3>What are phonetic variants?</h3>
+      <p>Hardcoded mappings for common spelling alternatives: "pawan"→"pavan", "yasasvi"→"yasaswi", "trinad"→"trinadh", "krish"→"krishna", "shirly"→"shirley". These are added to the candidate's search term dictionary.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why rule-based classifier instead of LLM?</h3>
+      <p>Speed (microseconds vs seconds), cost (zero API calls), reliability (deterministic results). Keyword matching is sufficient for detecting comparison/ranking patterns.</p>
+    </div>
+    <div class="info-card">
+      <h3>What queries are blocked?</h3>
+      <p>Comparisons ("Compare A and B"), rankings ("Who is the best?"), listings ("List all candidates"), aggregations ("How many candidates know Python?"), and queries with no candidate name ("What is Python?").</p>
+    </div>
+  </div>
+
+  <h3 style="margin:30px 0 10px;color:var(--green);">🧪 Testing & Evaluation Questions</h3>
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>How many tests are there?</h3>
+      <p><strong>40+ test cases</strong> across <strong>6 test classes</strong> in 2 test files. Covers: parser, fuzzy matcher, classifier, full pipeline routing, app session state logic, and retrieval integration.</p>
+    </div>
+    <div class="info-card">
+      <h3>How to run tests?</h3>
+      <p><code>pytest tests/test_rag.py -v</code> (40+ tests) or <code>pytest tests/test_retrieval.py -v</code> (4 tests) or <code>pytest tests/ -v</code> (all tests).</p>
+    </div>
+    <div class="info-card">
+      <h3>What is LLM-as-a-Judge?</h3>
+      <p>Instead of human evaluation, we use the LLM itself to score the quality of RAG outputs. Inspired by the RAGAS framework. The judge LLM receives the context + response + ground truth and outputs a score from 0.0 to 1.0.</p>
+    </div>
+    <div class="info-card">
+      <h3>What are the 5 evaluation metrics?</h3>
+      <p><strong>Faithfulness</strong> (grounding), <strong>Answer Relevancy</strong> (does it answer the question?), <strong>Context Precision</strong> (are chunks relevant?), <strong>Context Recall</strong> (does context cover all facts?), <strong>Answer Correctness</strong> (factual accuracy vs ground truth).</p>
+    </div>
+  </div>
+
+  <h3 style="margin:30px 0 10px;color:var(--orange);">⚡ Performance & Design Questions</h3>
+  <div class="info-grid">
+    <div class="info-card">
+      <h3>What is the typical query latency?</h3>
+      <p>~2-5 seconds total. Breakdown: classification (~0ms), name matching (~1ms), vector search (~50-200ms), LLM generation (~1-4 seconds). The LLM call dominates latency.</p>
+    </div>
+    <div class="info-card">
+      <h3>How is the engine cached?</h3>
+      <p>Two levels: (1) <code>@st.cache_resource</code> in app.py caches the FilteredQueryEngine across Streamlit reruns. (2) FilteredQueryEngine.__init__() caches ChromaDB connection, VectorStoreIndex, and OpenRouterClient.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why singleton pattern for OpenRouterClient?</h3>
+      <p>Prevents creating multiple HTTP connections. The <code>__new__</code> method ensures only one instance is ever created, reused across all queries.</p>
+    </div>
+    <div class="info-card">
+      <h3>What happens if the API key is invalid?</h3>
+      <p>The system enters <strong>Mock Mode</strong> — it still resolves candidate names and routes queries correctly, but returns "[Mock Mode] Candidate resolved to 'X'. Please configure your OPENROUTER_API_KEY." No LLM call is made.</p>
+    </div>
+    <div class="info-card">
+      <h3>How does retry logic work?</h3>
+      <p>Exponential backoff: attempt 1 → wait 1s → attempt 2 → wait 2s → attempt 3 → fail. This handles temporary API outages or rate limits without overwhelming the server.</p>
+    </div>
+    <div class="info-card">
+      <h3>Why delete collection on rebuild?</h3>
+      <p>Without deleting, re-indexing creates duplicate vectors (same resume indexed twice). This causes duplicate chunks in retrieval results, wasting context space and potentially confusing the LLM.</p>
+    </div>
+  </div>
+</div>
+
+<script>
+function showTab(id) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.target.classList.add('active');
+}
+</script>
+
+</body>
+</html>

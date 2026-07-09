@@ -12,10 +12,17 @@ from classifier import QueryClassifier
 from retriever import FilteredQueryEngine
 
 class TestRetrievalPipeline(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        cls.matcher = FuzzyNameMatcher()
+        cls.classifier = QueryClassifier()
+        cls.engine = FilteredQueryEngine()
+
     def setUp(self):
-        self.matcher = FuzzyNameMatcher()
-        self.classifier = QueryClassifier()
-        self.engine = FilteredQueryEngine()
+        # Bind class-level instances to self for compatibility with test methods
+        self.matcher = self.__class__.matcher
+        self.classifier = self.__class__.classifier
+        self.engine = self.__class__.engine
 
     def test_fuzzy_name_matching_exact(self):
         # Exact match

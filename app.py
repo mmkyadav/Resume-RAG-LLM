@@ -5,10 +5,15 @@ app.py — Resume RAG LLM — Recruiter Dashboard Interface
 import sys
 import time
 from pathlib import Path
-import nest_asyncio
 
-# Enable nested event loops for streamlit compatibility
-nest_asyncio.apply()
+try:
+    import nest_asyncio
+except ModuleNotFoundError:
+    nest_asyncio = None
+
+# Enable nested event loops for streamlit compatibility when available
+if nest_asyncio is not None:
+    nest_asyncio.apply()
 
 # Add src/ to path so modules can be imported cleanly
 sys.path.insert(0, str(Path(__file__).resolve().parent / "src"))
